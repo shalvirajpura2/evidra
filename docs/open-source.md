@@ -12,7 +12,7 @@ Evidra's application code is independent. The doodles are original SVG paths. Re
 | Lucide | Interface icons | ISC |
 | DM Sans, Kalam | Interface fonts | SIL Open Font License |
 | pytest | Regression tests | MIT |
-| Ruff | Python formatting | MIT |
+| Black | Python formatting | MIT |
 | Prettier | Frontend formatting | MIT |
 
 Optional model adapters: Ollama software (MIT) and Qwen3-8B weights (Apache-2.0); faster-whisper software (MIT); Kokoro model weights (Apache-2.0). Model and voice assets have their own notices. They are not vendored in this repository.

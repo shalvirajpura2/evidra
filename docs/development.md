@@ -13,7 +13,7 @@ python -m venv .venv
 
 In another terminal, `cd frontend`, `npm ci`, then `npm run dev`. Open `http://127.0.0.1:5173`. Port 5173 is strict so the instructions do not silently point at the wrong app.
 
-Python versions are recorded in `requirements.lock.txt`; npm uses `package-lock.json`. Heavy optional packages and model artifacts are not included in the base lock.
+Python package versions are recorded in `requirements.lock.txt`; npm uses `package-lock.json`. Heavy optional packages and model artifacts are not included in the base lock.
 
 ## Local Ollama
 
@@ -52,4 +52,3 @@ The fixture suite initially surfaced a singular “dose” question that retriev
 Local records live in `data/evidra.db`, which is ignored by Git. PostgreSQL can be selected with `EVIDRA_DATABASE_URL` and the `postgres` extra; that deployment path has not been integration-tested. Do not expose this unauthenticated workspace publicly. Public deployment needs identity, tenancy and abuse controls first.
 
 The interface's fonts are loaded from Google Fonts, with system fallbacks. Document content is not sent with font requests. Original doodles live in the React source as SVG paths.
-
