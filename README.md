@@ -6,11 +6,14 @@ Evidra is an independent workspace for document-backed conversations, review que
 
 The interface pairs charcoal surfaces and mint accents with a few hand-drawn SVG illustrations. The product has its own identity and implementation. Public engineering writing from Synthio Labs helped frame the problem; Evidra is not affiliated with Synthio.
 
+![Evidra workspace](docs/screenshots/workspace.jpg)
+
 ## Development
 
 ```powershell
 python -m venv .venv
-.venv\Scripts\python -m pip install -e ".[dev]"
+.venv\Scripts\python -m pip install -r requirements.lock.txt
+.venv\Scripts\python -m pip install -e . --no-deps
 .venv\Scripts\python -m uvicorn evidra.api:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
@@ -18,7 +21,7 @@ In a second terminal:
 
 ```powershell
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -41,3 +44,4 @@ npm run build
 
 See [system design](docs/system-design.md), [decisions](docs/decisions.md), and [evaluation notes](docs/evaluations.md) for behavior, tradeoffs and limits.
 
+The pinned setup was tested with Python 3.12. See [development notes](docs/development.md), [open-source components](docs/open-source.md), and [verification results](docs/verification.md) for optional model setup and the tested scope.

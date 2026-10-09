@@ -69,7 +69,11 @@ class Database:
     def __init__(self, url=None):
         Path("data").mkdir(exist_ok=True)
         url = url or os.getenv("EVIDRA_DATABASE_URL", "sqlite:///data/evidra.db")
-        self.engine = create_engine(url, connect_args={"check_same_thread": False} if url.startswith("sqlite") else {})
+        self.engine = create_engine(
+            url,
+            connect_args=(
+                {"check_same_thread": False} if url.startswith("sqlite") else {}
+            ),
+        )
         Base.metadata.create_all(self.engine)
         self.session = sessionmaker(self.engine, expire_on_commit=False)
-

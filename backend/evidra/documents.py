@@ -32,10 +32,14 @@ This reference does not contain dosing instructions, pregnancy guidance, pediatr
 def extract(filename, content):
     if filename.lower().endswith(".pdf"):
         from pypdf import PdfReader
+
         reader = PdfReader(io.BytesIO(content))
         if len(reader.pages) > 100:
             raise ValueError("Please use a PDF with 100 pages or fewer.")
-        sections = [(f"Page {index + 1}", page.extract_text() or "") for index, page in enumerate(reader.pages)]
+        sections = [
+            (f"Page {index + 1}", page.extract_text() or "")
+            for index, page in enumerate(reader.pages)
+        ]
     elif filename.lower().endswith((".txt", ".md")):
         text = content.decode("utf-8-sig")
         sections = []
@@ -51,25 +55,39 @@ def extract(filename, content):
     for locator, text in sections:
         # Conservative small chunks keep source locators useful; semantic/token-aware splitting is optional later.
         for index in range(0, len(text), 900):
-            chunk = text[index:index + 900].strip()
+            chunk = text[index : index + 900].strip()
             if chunk:
                 passages.append((f"{locator} · {index // 900 + 1}", chunk))
     if not passages:
-        raise ValueError("No readable text found. Scanned PDFs need OCR before importing.")
+        raise ValueError(
+            "No readable text found. Scanned PDFs need OCR before importing."
+        )
     return passages
 
 
 def ingest(session, filename, content, title, source="Local upload"):
     digest = hashlib.sha256(content).hexdigest()
-    existing = session.scalar(select(Document).where(Document.digest == digest, Document.title == title))
+    existing = session.scalar(
+        select(Document).where(Document.digest == digest, Document.title == title)
+    )
     if existing:
         return existing
     sections = extract(filename, content)
-    version = (session.scalar(select(func.max(Document.version)).where(Document.title == title)) or 0) + 1
+    version = (
+        session.scalar(
+            select(func.max(Document.version)).where(Document.title == title)
+        )
+        or 0
+    ) + 1
     document = Document(title=title, version=version, digest=digest, source=source)
     session.add(document)
     session.flush()
-    session.add_all([Passage(document_id=document.id, locator=locator, text=text) for locator, text in sections])
+    session.add_all(
+        [
+            Passage(document_id=document.id, locator=locator, text=text)
+            for locator, text in sections
+        ]
+    )
     session.commit()
     return document
 
@@ -77,5 +95,10 @@ def ingest(session, filename, content, title, source="Local upload"):
 def seed(database):
     with database.session() as session:
         if not session.scalar(select(Document.id).limit(1)):
-            ingest(session, "aster.md", DEMO_TEXT.encode(), "Aster · fictional study", "Bundled synthetic fixture")
-
+            ingest(
+                session,
+                "aster.md",
+                DEMO_TEXT.encode(),
+                "Aster · fictional study",
+                "Bundled synthetic fixture",
+            )
