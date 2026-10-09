@@ -1,6 +1,8 @@
 .venv/
 __pycache__/
 .pytest_cache/
+.pytest_tmp/
+*.egg-info/
 *.pyc
 .env
 data/
@@ -9,4 +11,3 @@ dist/
 *.log
 playwright-report/
 test-results/
-
