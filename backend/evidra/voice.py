@@ -31,7 +31,7 @@ def transcription_model(language="en"):
 
 
 def transcribe(content, language="en"):
-    if not SPEECH_SLOTS.acquire(timeout=30):
+    if not SPEECH_SLOTS.acquire(timeout=60):
         raise VoiceBusy("Voice is busy. Please try again in a moment.")
     name = None
     try:
@@ -65,7 +65,7 @@ def speech_model(language="en"):
 
 
 def speak(text, language="en"):
-    if not SPEECH_SLOTS.acquire(timeout=30):
+    if not SPEECH_SLOTS.acquire(timeout=60):
         raise VoiceBusy("Voice is busy. Please try again in a moment.")
     try:
         buffer = io.BytesIO()

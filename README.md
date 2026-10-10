@@ -12,7 +12,7 @@ Evidra lets someone ask questions about a handbook, product guide, or set of not
 
 1. Choose **Try the sample**. A fictional company handbook is ready immediately.
 2. Click **Start talking**, allow the microphone, and ask: “How many days of paid leave do I get?”
-3. Pause. The assistant replies aloud and shows the handbook passage: employees receive 24 days each year.
+3. Press **Send my question**. The assistant replies aloud and shows the handbook passage: employees receive 24 days each year.
 
 Choose **हिन्दी · Hindi** to ask “मुझे साल में कितने दिन की छुट्टी मिलती है?” You can also type a question or upload a searchable PDF, text file, or Markdown document.
 
@@ -26,6 +26,7 @@ This is an independent portfolio project demonstrating voice-agent engineering: 
 
 - Talk to a document in English or Hindi. Hindi questions are translated into English for retrieval; cited English replies are translated into Hindi.
 - Inspect the original source beside each answer. Missing evidence produces an explanation rather than an invented answer.
+- Choose automatic sending if you prefer hands-free conversation. Otherwise press **Send my question** after speaking.
 - Stop a reply and speak again. Voice is turn-taking: the microphone pauses while the assistant answers.
 - Bring a document up to 5 MB. Scanned PDFs need OCR first.
 - Open **Explore the engineering** for reference versions, human reviews, the evaluation suite, and system design.
@@ -42,7 +43,7 @@ microphone → whisper → document search → qwen + citation checks → piper 
 
 React provides the browser experience. FastAPI owns documents, transcripts, and reviews. A signed visitor token selects a separate SQLite database. Gradio queues model requests on Hugging Face ZeroGPU. Speech runs on CPU with bounded concurrency.
 
-The hosted models are Qwen2.5-1.5B-Instruct, faster-whisper small for English and medium for Hindi, Marian translators, and Piper voices for English and Hindi. There is no paid inference API dependency. Component and voice licenses are documented in [open-source components](docs/open-source.md). The Hindi Pratham voice has a **noncommercial, share-alike dataset license**; this portfolio demo is not a commercially licensed voice service.
+The hosted models are Qwen2.5-1.5B-Instruct, faster-whisper small for English and medium for Hindi, Marian and NLLB translators, and Piper voices for English and Hindi. There is no paid inference API dependency. Component and voice licenses are documented in [open-source components](docs/open-source.md). The Hindi Pratham voice has a **noncommercial, share-alike dataset license**; this portfolio demo is not a commercially licensed voice service.
 
 ## Capacity and honest limits
 

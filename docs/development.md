@@ -53,4 +53,4 @@ Local records live in `data/evidra.db`, which is ignored by Git. PostgreSQL can 
 
 The interface's fonts are loaded from Google Fonts, with system fallbacks. Document content is not sent with font requests. Original doodles live in the React source as SVG paths.
 
-Hindi document conversations also need `.[chat]` and Transformers mode. The Marian models download on first use. Set `EVIDRA_WHISPER_HINDI_MODEL` to a local model directory if needed. The base extractive mode supports English questions without model downloads.
+Hindi document conversations also need `.[chat]` and Transformers mode. The translation models download on first use. Set `EVIDRA_WHISPER_HINDI_MODEL` to a local model directory if needed. The base extractive mode supports English questions without model downloads.

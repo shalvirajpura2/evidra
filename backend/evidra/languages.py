@@ -11,8 +11,16 @@ TRANSLATION_SLOT = BoundedSemaphore(1)
 def translation_pair(direction="hi-en"):
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-    name = "Helsinki-NLP/opus-mt-" + direction
-    tokenizer = AutoTokenizer.from_pretrained(name, use_fast=False)
+    name = (
+        "facebook/nllb-200-distilled-600M"
+        if direction == "en-hi"
+        else "Helsinki-NLP/opus-mt-hi-en"
+    )
+    tokenizer = AutoTokenizer.from_pretrained(
+        name,
+        use_fast=False,
+        **({"src_lang": "eng_Latn"} if direction == "en-hi" else {}),
+    )
     model = AutoModelForSeq2SeqLM.from_pretrained(name).to("cpu").eval()
     return tokenizer, model
 
@@ -28,7 +36,14 @@ def translate(text, direction):
         if inputs["input_ids"].shape[1] > 512:
             raise ValueError("Question is too long to translate")
         with torch.inference_mode():
-            output = model.generate(**inputs, max_new_tokens=160, num_beams=2)
+            options = (
+                {"forced_bos_token_id": tokenizer.convert_tokens_to_ids("hin_Deva")}
+                if direction == "en-hi"
+                else {}
+            )
+            output = model.generate(
+                **inputs, max_new_tokens=160, num_beams=2, **options
+            )
         result = tokenizer.decode(output[0], skip_special_tokens=True).strip()
         if not result or (
             direction == "hi-en" and re.search(r"[\u0900-\u097f]", result)
