@@ -8,9 +8,8 @@ root = Path(__file__).resolve().parents[1]
 output = root / "deploy/huggingface/evidra.zip"
 files = sorted((root / "backend").rglob("*.py"))
 files += sorted(path for path in (root / "frontend/dist").rglob("*") if path.is_file())
-files += sorted((root / "frontend/src").rglob("*.tsx"))
+files += sorted(path for path in (root / "frontend/src").rglob("*") if path.suffix in (".ts", ".tsx", ".css"))
 files += [
-    root / "frontend/src/style.css",
     root / "pyproject.toml",
     root / "docs/system-design.md",
     root / "docs/decisions.md",

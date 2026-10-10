@@ -4,11 +4,13 @@ import { Mic, Square, Volume2 } from 'lucide-react';
 type Reply = { id: string };
 type Props = {
   disabled: boolean;
-  send: (text: string) => Promise<Reply | undefined>;
+  send: (text: string, signal?: AbortSignal) => Promise<Reply | undefined>;
   fetchApi: (path: string, options?: RequestInit) => Promise<Response>;
+  language?: 'en' | 'hi';
+  onPhase?: (phase: string) => void;
 };
 
-export function VoiceConversation({ disabled, send, fetchApi }: Props) {
+export function VoiceConversation({ disabled, send, fetchApi, language = 'en', onPhase }: Props) {
   const [phase, setPhase] = useState('idle');
   const [error, setError] = useState('');
   const [transcript, setTranscript] = useState('');
@@ -23,6 +25,9 @@ export function VoiceConversation({ disabled, send, fetchApi }: Props) {
   const abort = useRef<AbortController | null>(null);
   const sender = useRef(send);
   sender.current = send;
+  useEffect(() => {
+    onPhase?.(phase);
+  }, [phase, onPhase]);
 
   function clearAudio() {
     if (audio.current) {
@@ -60,6 +65,7 @@ export function VoiceConversation({ disabled, send, fetchApi }: Props) {
       abort.current = new AbortController();
       const body = new FormData();
       body.append('file', blob, 'voice.webm');
+      body.append('language', language);
       const response = await fetchApi('/voice/transcribe', {
         method: 'POST',
         body,
@@ -70,7 +76,7 @@ export function VoiceConversation({ disabled, send, fetchApi }: Props) {
       if (!running.current || turn !== generation.current) return;
       setTranscript(data.text);
       setPhase('thinking');
-      const reply = await sender.current(data.text);
+      const reply = await sender.current(data.text, abort.current.signal);
       if (!running.current || turn !== generation.current) return;
       if (!reply) throw new Error('The question could not be completed.');
       setPhase('preparing speech');
@@ -189,7 +195,7 @@ export function VoiceConversation({ disabled, send, fetchApi }: Props) {
       <div className="voice-controls">
         {phase === 'idle' ? (
           <button type="button" className="text-button" onClick={start} disabled={disabled}>
-            <Mic size={16} /> Start voice
+            <Mic size={20} /> {language === 'hi' ? 'बात शुरू करें' : 'Start talking'}
           </button>
         ) : (
           <>
@@ -213,7 +219,11 @@ export function VoiceConversation({ disabled, send, fetchApi }: Props) {
           </>
         )}
       </div>
-      <small>Speak, then pause. Replies play aloud; the microphone reopens after each reply.</small>
+      <small>
+        {language === 'hi'
+          ? 'बोलें, फिर रुकें। जवाब सुनने के बाद आप फिर बोल सकते हैं।'
+          : 'Speak, then pause. Your assistant replies aloud and listens again.'}
+      </small>
       {transcript && <p className="voice-transcript">Heard: {transcript}</p>}
       {error && (
         <p role="alert" className="voice-error">
