@@ -18,7 +18,11 @@ This is a turn-taking voice conversation, not simultaneous full-duplex audio or 
 
 ## Hugging Face Spaces
 
-The account's creation screen currently marks Docker as paid and offers Gradio/ZeroGPU as its free tier. The staging package uses that Python SDK, serves the existing React interface and API on port 7860, and runs its small models on CPU without requesting GPU time. `deploy/huggingface/` contains the entry point, metadata and dependencies. After building the frontend, `python scripts/package_space.py` produces an allowlisted archive for upload alongside those files. The Dockerfile is an alternative for a host supporting Docker; it is not the free account's chosen deployment.
+The account's creation screen currently marks Docker as paid and offers Gradio/ZeroGPU as its free tier. The uploaded private staging package serves React and FastAPI on port 7860, but it is **not compatible with ZeroGPU yet**: the runtime stops with `No @spaces.GPU function detected during startup`. Selecting CPU Basic in settings did not change the running hardware. Do not treat this staging upload as a working deployment.
+
+Hugging Face's current documentation requires a paid plan to create ordinary compute Spaces, while eligible free accounts can create two Gradio ZeroGPU Spaces. ZeroGPU needs real GPU inference registered through Gradio event handlers; merely labelling a FastAPI app as the Gradio SDK does not satisfy this requirement. A free deployment therefore needs a proper Gradio queue integration that preserves visitor isolation and the React interface. Alternatively, a paid-plan CPU/Docker Space can use the existing CPU server. No paid plan or compute purchase has been authorized.
+
+`deploy/huggingface/` contains the staged entry point, metadata and dependencies. After building the frontend, `python scripts/package_space.py` produces an allowlisted archive for upload alongside those files. The Dockerfile is prepared for a host supporting Docker. Hosted dependency resolution succeeded with PyTorch 2.13.0, Transformers 5.19.0 and Hub 2.2.0; actual hosted chat inference remains unverified.
 
 A public Space exposes uploaded source; keep it private until that disclosure is approved. The GitHub repository can remain private. Free Spaces can sleep and may cold-start; availability and model performance are not guaranteed.
 
