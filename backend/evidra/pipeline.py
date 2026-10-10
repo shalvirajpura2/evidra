@@ -112,7 +112,7 @@ def ollama(question, evidence, guarded):
     return json.loads(response.json()["message"]["content"])
 
 
-def execute(question, passages, previous_question=None, guarded=True):
+def execute(question, passages, previous_question=None, guarded=True, language="en"):
     start = perf_counter()
     config = settings()
     disposition, reason, answer = (
@@ -188,7 +188,7 @@ def execute(question, passages, previous_question=None, guarded=True):
                     from .models import generate
 
                     generated = generate(
-                        context_question, evidence if guarded else [], guarded
+                        context_question, evidence if guarded else [], guarded, language
                     )
                 else:
                     generated = ollama(
@@ -199,6 +199,12 @@ def execute(question, passages, previous_question=None, guarded=True):
                 ):
                     raise ValueError("Invalid answer schema")
                 answer, citations = generated["answer"], generated["citations"]
+                if (
+                    language == "hi"
+                    and re.search(r"[a-zA-Z]", answer)
+                    and not re.search(r"[\u0900-\u097f]", answer)
+                ):
+                    raise ValueError("The model did not answer in Hindi")
                 if not all(isinstance(item, str) for item in citations):
                     raise ValueError("Invalid citation schema")
                 allowed = {item["id"] for item in evidence}
@@ -249,6 +255,12 @@ def execute(question, passages, previous_question=None, guarded=True):
             "detail": "Checked citation membership. Semantic correctness still needs a reviewer.",
         }
     )
+    if language == "hi" and disposition != "answer":
+        reason = (
+            "इस प्रश्न के लिए मानवीय समीक्षा ज़रूरी है। कृपया फिर से प्रयास करें या स्रोत देखें।"
+            if disposition == "review"
+            else "इस दस्तावेज़ में पर्याप्त जानकारी नहीं मिली। कृपया अपना प्रश्न स्पष्ट करें या दूसरा दस्तावेज़ जोड़ें।"
+        )
     return {
         "disposition": disposition,
         "reason": reason,

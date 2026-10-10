@@ -28,6 +28,25 @@ The fictional protocol asks reviewers to record a reported safety concern and ro
 This reference does not contain dosing instructions, pregnancy guidance, pediatric guidance, drug comparisons, or treatment recommendations. Questions requiring those details cannot be answered from this document.
 """
 
+HANDBOOK_TEXT = """# Northstar team handbook
+Northstar is a fictional company. This sample has no real employee information.
+
+## Time off
+Employees receive 24 days of paid leave each year. To request leave, submit the dates to your team lead at least five working days in advance.
+
+## Working together
+The team works remotely. Core collaboration hours are 11 AM to 3 PM India Standard Time, Monday through Friday. The weekly team meeting is on Monday at 11 AM India Standard Time.
+
+## Equipment
+New employees can claim up to 30,000 Indian rupees for work equipment. Send the receipt to the operations team within 30 days of purchase.
+
+## First week
+On your first day, meet your buddy, set up your work accounts, and read the security guide. The operations team helps with equipment and account access.
+
+## Information not provided
+This handbook does not include salaries, individual employee records, or promotion criteria. Do not invent those details.
+"""
+
 
 def extract(filename, content):
     if filename.lower().endswith(".pdf"):

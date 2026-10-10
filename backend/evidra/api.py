@@ -4,6 +4,8 @@ import asyncio
 import os
 from pathlib import Path
 from uuid import uuid4
+from typing import Literal
+from time import perf_counter
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
@@ -13,7 +15,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
 from .db import Database, Document, Passage, Review, Run, Turn
-from .documents import ingest, seed
+from .documents import HANDBOOK_TEXT, ingest, seed
 from .evaluations import CASES, run_evaluation
 from .pipeline import execute, settings
 from .public import VisitorDatabases
@@ -24,6 +26,7 @@ GPU_CALL = ContextVar("gpu_call", default=False)
 class Question(BaseModel):
     question: str = Field(min_length=1, max_length=4000)
     document_id: str
+    language: Literal["en", "hi"] = "en"
     conversation_id: str = Field(default_factory=lambda: str(uuid4()), max_length=36)
 
 
@@ -49,7 +52,9 @@ def create_app(database_url=None):
             from .voice import transcription_model, speech_model
 
             Path("data/models").mkdir(parents=True, exist_ok=True)
-            if not Path("data/models/en_US-ljspeech-medium.onnx").is_file():
+            for voice in ("en_US-ljspeech-medium", "hi_IN-pratham-medium"):
+                if Path(f"data/models/{voice}.onnx").is_file():
+                    continue
                 subprocess.run(
                     [
                         sys.executable,
@@ -57,13 +62,14 @@ def create_app(database_url=None):
                         "piper.download_voices",
                         "--data-dir",
                         "data/models",
-                        "en_US-ljspeech-medium",
+                        voice,
                     ],
                     check=True,
                 )
             model_pair()
             transcription_model()
             speech_model()
+            speech_model("hi")
             model_state["ready"] = True
         except Exception:
             import traceback
@@ -129,6 +135,7 @@ def create_app(database_url=None):
             "models_ready": model_state["ready"],
             "model_error": model_state["error"],
             "zero_gpu": os.getenv("EVIDRA_ZERO_GPU", "0") == "1",
+            "languages": ["en", "hi"],
             **settings(),
         }
 
@@ -156,6 +163,18 @@ def create_app(database_url=None):
                 ],
             }
 
+    @app.post("/api/demo")
+    def demo():
+        with database.session() as session:
+            document = ingest(
+                session,
+                "northstar.md",
+                HANDBOOK_TEXT.encode(),
+                "Northstar · sample handbook",
+                "Bundled company handbook",
+            )
+            return document_dict(session, document)
+
     @app.post("/api/documents", status_code=201)
     async def upload(file: UploadFile = File(...), title: str = Form("")):
         content = await file.read(5 * 1024 * 1024 + 1)
@@ -166,7 +185,19 @@ def create_app(database_url=None):
             with database.session() as session:
                 if (
                     database.public
-                    and session.scalar(select(func.count()).select_from(Document)) >= 11
+                    and session.scalar(
+                        select(func.count())
+                        .select_from(Document)
+                        .where(
+                            Document.source.notin_(
+                                [
+                                    "Bundled synthetic fixture",
+                                    "Bundled company handbook",
+                                ]
+                            )
+                        )
+                    )
+                    >= 10
                 ):
                     raise HTTPException(
                         429,
@@ -219,9 +250,45 @@ def create_app(database_url=None):
                 .order_by(Turn.created_at.desc())
                 .limit(1)
             )
-            result = execute(
-                body.question.strip(), passages, previous.question if previous else None
+            started = perf_counter()
+            search_question = body.question.strip()
+            previous_question = (
+                previous.result.get("search_question", previous.question)
+                if previous
+                else None
             )
+            if body.language == "hi":
+                if len(search_question) > 1200:
+                    raise HTTPException(
+                        422, "Keep Hindi questions shorter than 1200 characters."
+                    )
+                if settings()["provider"] != "transformers":
+                    raise HTTPException(
+                        503, "Hindi answers need the hosted open model."
+                    )
+                from .models import english_question
+
+                try:
+                    search_question = english_question(search_question)
+                except (ValueError, RuntimeError, OSError):
+                    raise HTTPException(
+                        503,
+                        "Couldn't understand this Hindi question. Please try again.",
+                    )
+            result = execute(
+                search_question, passages, previous_question, language=body.language
+            )
+            result["language"] = body.language
+            result["search_question"] = search_question
+            result["elapsed_ms"] = round((perf_counter() - started) * 1000, 2)
+            if body.language == "hi":
+                result["trace"].insert(
+                    0,
+                    {
+                        "stage": "Translate",
+                        "detail": "Translated the Hindi question into English for document search. Original question is retained.",
+                    },
+                )
             result.update(
                 {
                     "document_title": document.title,
@@ -342,14 +409,16 @@ def create_app(database_url=None):
     app.state.evaluate = evaluate
 
     @app.post("/api/voice/transcribe")
-    async def audio(file: UploadFile = File(...)):
+    async def audio(
+        file: UploadFile = File(...), language: Literal["en", "hi"] = Form("en")
+    ):
         content = await file.read(8 * 1024 * 1024 + 1)
         if len(content) > 8 * 1024 * 1024:
             raise HTTPException(413, "Keep recordings under 8 MB.")
         try:
-            from .voice import transcribe
+            from .voice import transcribe, VoiceBusy
 
-            text = await run_in_threadpool(transcribe, content)
+            text = await run_in_threadpool(transcribe, content, language)
             if not text.strip():
                 raise HTTPException(
                     422, "No speech was detected. Try a clearer recording."
@@ -357,6 +426,8 @@ def create_app(database_url=None):
             return {"text": text}
         except HTTPException:
             raise
+        except VoiceBusy:
+            raise HTTPException(503, "Voice is busy. Please try again in a moment.")
         except ImportError:
             raise HTTPException(
                 503,
@@ -378,7 +449,10 @@ def create_app(database_url=None):
                 from .voice import speak
 
                 return Response(
-                    speak((turn.result["answer"] or turn.result["reason"])[:2000]),
+                    speak(
+                        (turn.result["answer"] or turn.result["reason"])[:2000],
+                        turn.result.get("language", "en"),
+                    ),
                     media_type="audio/wav",
                 )
             except ImportError:

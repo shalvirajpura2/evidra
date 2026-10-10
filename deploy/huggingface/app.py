@@ -25,7 +25,9 @@ from evidra.api import app
 from evidra.queued import queued_call
 
 
-@spaces.GPU(duration=45)
+@spaces.GPU(
+    duration=lambda token, payload: 90 if payload.get("language") == "hi" else 45
+)
 def ask(token, payload):
     return queued_call(app, "ask", token, payload)
 
