@@ -10,17 +10,28 @@ app_file: app.py
 pinned: false
 preload_from_hub:
   - Qwen/Qwen2.5-1.5B-Instruct
-  - Systran/faster-whisper-base.en
+  - Systran/faster-whisper-small
+  - Systran/faster-whisper-medium
+  - Helsinki-NLP/opus-mt-hi-en
+  - Helsinki-NLP/opus-mt-en-hi
 ---
 
 # Evidra
 
-An answer should come with something you can check.
+**Turn your documents into a voice assistant.**
 
-Independent evidence-backed conversations, document versions, reviews, and reproducible evaluations. The original React interface is served with the Python API on one origin. Voice uses faster-whisper and Piper; conversational answers use Qwen2.5-1.5B-Instruct. No paid inference API is used.
+Choose **Try the sample**, click **Start talking**, and ask: “How many days of paid leave do I get?” Hear the reply and inspect the source beside it. You can upload a searchable PDF, text file, or Markdown document up to 5 MB.
 
-Each browser has a separate temporary session. Do not upload sensitive documents. Raw recordings are removed after transcription; recognized text stays in that visitor's temporary conversation. The Aster sample is fictional. This is a portfolio engineering demo, not a medical product.
+Choose **हिन्दी · Hindi** to ask and hear replies in Hindi. The demo uses English documents; Hindi questions are translated for document search. Hindi is an early demo and needs human verification. Voice is turn-taking, with interruptible playback.
 
-Start voice, allow the microphone, speak, and pause. You can end voice at any time or interrupt playback to speak again. English speech uses CPU models; chat uses the free ZeroGPU queue. Open the Hugging Face Space page and sign in for your account's quota. Direct app URLs use stricter anonymous API limits. Free hosting may sleep or clear records.
+## Built with open models
 
-Upstream components retain their licenses: React/FastAPI/faster-whisper (MIT), Qwen2.5 weights (Apache-2.0), and Piper engine (GPL-3.0). The ljspeech voice has its own model card and dataset notice. Model assets are downloaded from their public publishers and are not included in the source archive.
+Qwen2.5-1.5B-Instruct answers on ZeroGPU. Whisper small transcribes English and medium transcribes Hindi. Marian translates questions and cited answers and Piper generates English and Hindi audio on CPU. No paid inference API is used.
+
+Each browser gets a separate temporary workspace. Use non-sensitive files; records can disappear on restart. Raw recordings are deleted after transcription. The Northstar handbook and Aster evaluation reference are fictional.
+
+Free hosting has daily quotas and shared queues. Open this canonical Space page and sign in for your account's quota. The target is ten independent visitors with queued inference, not ten simultaneous real-time calls.
+
+## Licenses
+
+React, FastAPI and faster-whisper are MIT; Qwen weights are Apache-2.0; Piper's engine is GPL-3.0. Voices have separate notices. The Hindi Pratham voice's dataset is CC-BY-NC-SA-4.0, restricting commercial use. This is a noncommercial portfolio demonstration, not a commercially licensed voice service. Model weights are downloaded from their publishers and are excluded from the source bundle.

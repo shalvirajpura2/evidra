@@ -50,6 +50,7 @@ def create_app(database_url=None):
             import sys
             from .models import model_pair
             from .voice import transcription_model, speech_model
+            from .languages import translation_pair
 
             Path("data/models").mkdir(parents=True, exist_ok=True)
             for voice in ("en_US-ljspeech-medium", "hi_IN-pratham-medium"):
@@ -67,7 +68,10 @@ def create_app(database_url=None):
                     check=True,
                 )
             model_pair()
+            translation_pair()
+            translation_pair("en-hi")
             transcription_model()
+            transcription_model("hi")
             speech_model()
             speech_model("hi")
             model_state["ready"] = True
@@ -266,7 +270,7 @@ def create_app(database_url=None):
                     raise HTTPException(
                         503, "Hindi answers need the hosted open model."
                     )
-                from .models import english_question
+                from .languages import english_question
 
                 try:
                     search_question = english_question(search_question)
@@ -286,7 +290,7 @@ def create_app(database_url=None):
                     0,
                     {
                         "stage": "Translate",
-                        "detail": "Translated the Hindi question into English for document search. Original question is retained.",
+                        "detail": f"English search question: {search_question}. Original Hindi question is retained.",
                     },
                 )
             result.update(

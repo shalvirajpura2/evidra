@@ -41,7 +41,23 @@ def explicitly_missing(question, passages):
 
 
 def tokens(text):
-    return set(re.findall(r"[a-z0-9]+", text.lower())) - STOP
+    aliases = {
+        "vacation": "leave",
+        "vacations": "leave",
+        "holiday": "leave",
+        "holidays": "leave",
+        "days": "day",
+        "yearly": "year",
+        "annually": "year",
+        "annual": "year",
+        "meetings": "meeting",
+        "expenses": "expense",
+    }
+    return {
+        aliases.get(word, word)
+        for word in re.findall(r"[a-z0-9]+", text.lower())
+        if word not in STOP
+    }
 
 
 def retrieve(question, passages):
@@ -188,7 +204,7 @@ def execute(question, passages, previous_question=None, guarded=True, language="
                     from .models import generate
 
                     generated = generate(
-                        context_question, evidence if guarded else [], guarded, language
+                        context_question, evidence if guarded else [], guarded, "en"
                     )
                 else:
                     generated = ollama(
@@ -199,12 +215,6 @@ def execute(question, passages, previous_question=None, guarded=True, language="
                 ):
                     raise ValueError("Invalid answer schema")
                 answer, citations = generated["answer"], generated["citations"]
-                if (
-                    language == "hi"
-                    and re.search(r"[a-zA-Z]", answer)
-                    and not re.search(r"[\u0900-\u097f]", answer)
-                ):
-                    raise ValueError("The model did not answer in Hindi")
                 if not all(isinstance(item, str) for item in citations):
                     raise ValueError("Invalid citation schema")
                 allowed = {item["id"] for item in evidence}
@@ -221,6 +231,16 @@ def execute(question, passages, previous_question=None, guarded=True, language="
                     disposition, reason = (
                         "abstain",
                         "The model could not answer from the available evidence.",
+                    )
+                elif language == "hi":
+                    from .languages import hindi_answer
+
+                    answer = hindi_answer(answer)
+                    trace.append(
+                        {
+                            "stage": "Translate answer",
+                            "detail": "Translated the cited English answer into Hindi; checked that numbers were preserved.",
+                        }
                     )
                 trace.append(
                     {

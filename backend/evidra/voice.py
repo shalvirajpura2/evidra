@@ -13,12 +13,16 @@ class VoiceBusy(Exception):
     pass
 
 
-@lru_cache(maxsize=1)
-def transcription_model():
+@lru_cache(maxsize=2)
+def transcription_model(language="en"):
     from faster_whisper import WhisperModel
 
     return WhisperModel(
-        os.getenv("EVIDRA_WHISPER_MODEL", "small"),
+        (
+            os.getenv("EVIDRA_WHISPER_HINDI_MODEL", "medium")
+            if language == "hi"
+            else os.getenv("EVIDRA_WHISPER_MODEL", "small")
+        ),
         device="cpu",
         compute_type="int8",
         cpu_threads=2,
@@ -29,18 +33,23 @@ def transcription_model():
 def transcribe(content, language="en"):
     if not SPEECH_SLOTS.acquire(timeout=30):
         raise VoiceBusy("Voice is busy. Please try again in a moment.")
-    with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as file:
-        file.write(content)
-        name = file.name
+    name = None
     try:
-        segments, info = transcription_model().transcribe(
-            name, beam_size=1, language=language, vad_filter=True
+        with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as file:
+            name = file.name
+            file.write(content)
+        segments, info = transcription_model(language).transcribe(
+            name,
+            beam_size=3 if language == "hi" else 1,
+            language=language,
+            vad_filter=True,
         )
         if info.duration > 30:
             raise ValueError("Keep voice turns shorter than 30 seconds")
         return " ".join(segment.text.strip() for segment in segments)
     finally:
-        Path(name).unlink(missing_ok=True)
+        if name:
+            Path(name).unlink(missing_ok=True)
         SPEECH_SLOTS.release()
 
 

@@ -1,8 +1,23 @@
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.testclient import TestClient
+import pytest
 
 from evidra.api import create_app
+
+
+def test_hindi_reply_translation_rejects_changed_numbers(monkeypatch):
+    from evidra import languages
+
+    monkeypatch.setattr(
+        languages, "translate", lambda text, direction: "आपको 42 दिन मिलते हैं।"
+    )
+    with pytest.raises(ValueError, match="numbers"):
+        languages.hindi_answer("You receive 24 days.")
+    monkeypatch.setattr(
+        languages, "translate", lambda text, direction: "आपको 24 दिन मिलते हैं।"
+    )
+    assert "24" in languages.hindi_answer("You receive 24 days.")
 
 
 def test_ten_concurrent_visitors_keep_documents_and_conversations_separate(
@@ -72,23 +87,28 @@ def test_hindi_question_keeps_original_and_searches_translated_evidence(
 ):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("EVIDRA_PROVIDER", "transformers")
-    from evidra import models
+    from evidra import models, languages
 
     monkeypatch.setattr(
-        models,
+        languages,
         "english_question",
         lambda text: "How many days of paid leave do employees receive?",
     )
 
     def generate(question, evidence, guarded, language):
-        assert language == "hi" and guarded
+        assert language == "en" and guarded
         passage = next(item for item in evidence if "24 days" in item["text"])
         return {
-            "answer": "कर्मचारियों को हर साल 24 दिन की छुट्टी मिलती है।",
+            "answer": "Employees receive 24 days of leave each year.",
             "citations": [passage["id"]],
         }
 
     monkeypatch.setattr(models, "generate", generate)
+    monkeypatch.setattr(
+        languages,
+        "hindi_answer",
+        lambda text: "कर्मचारियों को हर साल 24 दिन की छुट्टी मिलती है।",
+    )
     with TestClient(create_app()) as client:
         doc = client.post("/api/demo").json()
         original = "मुझे साल में कितने दिन की छुट्टी मिलती है?"
@@ -120,12 +140,12 @@ def test_failed_hindi_translation_does_not_store_an_invented_answer(
 ):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("EVIDRA_PROVIDER", "transformers")
-    from evidra import models
+    from evidra import languages
 
     def failed(text):
         raise ValueError("Bad translation")
 
-    monkeypatch.setattr(models, "english_question", failed)
+    monkeypatch.setattr(languages, "english_question", failed)
     with TestClient(create_app()) as client:
         doc = client.post("/api/demo").json()
         assert (
