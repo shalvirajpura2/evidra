@@ -30,7 +30,7 @@ def ask(token, payload):
     return queued_call(app, "ask", token, payload)
 
 
-@spaces.GPU(duration=120)
+@spaces.GPU(duration=90)
 def evaluate(token, payload):
     return queued_call(app, "evaluate", token, payload)
 

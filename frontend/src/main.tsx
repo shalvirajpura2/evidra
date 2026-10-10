@@ -83,6 +83,7 @@ type Run = {
 type Page = 'Conversations' | 'References' | 'Review queue' | 'Evaluations' | 'Architecture';
 
 let sessionPromise: Promise<string> | null = null;
+let rejectedToken: string | null = null;
 let zeroGpu = false;
 let computeClient: Promise<Client> | null = null;
 async function visitorToken() {
@@ -108,8 +109,12 @@ async function fetchApi(path: string, options: RequestInit = {}, retry = true): 
   if (token) headers.set('Authorization', `Bearer ${token}`);
   const response = await fetch(`/api${path}`, { ...options, headers });
   if (response.status === 401 && retry) {
-    localStorage.removeItem('evidra.session');
-    sessionPromise = null;
+    // Parallel startup requests must share one replacement session after restart.
+    if (rejectedToken !== token) {
+      rejectedToken = token;
+      localStorage.removeItem('evidra.session');
+      sessionPromise = null;
+    }
     return fetchApi(path, options, false);
   }
   return response;
