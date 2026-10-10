@@ -12,11 +12,59 @@ os.environ.setdefault("EVIDRA_PUBLIC", "1")
 os.environ.setdefault("EVIDRA_PROVIDER", "transformers")
 os.environ.setdefault("EVIDRA_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
 os.environ.setdefault("EVIDRA_WARM_MODELS", "1")
+os.environ["EVIDRA_WARM_MODELS"] = "0"
+os.environ["EVIDRA_ZERO_GPU"] = "1"
+os.environ["EVIDRA_DEVICE"] = "cuda"
 os.environ.setdefault("HF_HOME", str(Path("data/hf-cache").resolve()))
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
 import uvicorn
+import gradio as gr
+import spaces
 from evidra.api import app
+from evidra.queued import queued_call
+
+
+@spaces.GPU(duration=45)
+def ask(token, payload):
+    return queued_call(app, "ask", token, payload)
+
+
+@spaces.GPU(duration=120)
+def evaluate(token, payload):
+    return queued_call(app, "evaluate", token, payload)
+
+
+with gr.Blocks(analytics_enabled=False) as compute:
+    gr.Markdown("Evidra's GPU queue. Open the main workspace to start a conversation.")
+    token_input = gr.Textbox(visible=False)
+    payload_input = gr.JSON(visible=False)
+    output = gr.JSON(visible=False)
+    gr.Button("Ask", visible=False).click(
+        ask,
+        [token_input, payload_input],
+        output,
+        api_name="ask",
+        concurrency_id="model",
+        concurrency_limit=1,
+    )
+    gr.Button("Evaluate", visible=False).click(
+        evaluate,
+        [token_input, payload_input],
+        output,
+        api_name="evaluate",
+        concurrency_id="model",
+        concurrency_limit=1,
+    )
+compute.queue(max_size=16)
+# Mount the compute queue before the catch-all React static route.
+static_routes = [route for route in app.routes if getattr(route, "path", None) == "/"]
+for route in static_routes:
+    app.routes.remove(route)
+app = gr.mount_gradio_app(app, compute, path="/compute")
+app.routes.extend(static_routes)
+app.state.model_state["ready"] = False
+app.state.warm_models()
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=7860, workers=1)

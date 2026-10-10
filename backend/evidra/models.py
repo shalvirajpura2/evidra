@@ -16,7 +16,9 @@ def model_pair():
     name = os.getenv("EVIDRA_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
     torch.set_num_threads(int(os.getenv("EVIDRA_CPU_THREADS", "2")))
     tokenizer = AutoTokenizer.from_pretrained(name)
-    model = AutoModelForCausalLM.from_pretrained(name, torch_dtype=torch.float32)
+    device = os.getenv("EVIDRA_DEVICE", "cpu")
+    dtype = torch.float16 if device == "cuda" else torch.float32
+    model = AutoModelForCausalLM.from_pretrained(name, torch_dtype=dtype).to(device)
     model.eval()
     return tokenizer, model
 
@@ -48,7 +50,7 @@ def generate(question, evidence, guarded):
         )
         inputs = tokenizer(
             prompt, return_tensors="pt", truncation=True, max_length=2048
-        )
+        ).to(model.device)
         with torch.inference_mode():
             output = model.generate(
                 **inputs,

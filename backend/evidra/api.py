@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 import asyncio
 import os
 from pathlib import Path
@@ -16,6 +17,8 @@ from .documents import ingest, seed
 from .evaluations import CASES, run_evaluation
 from .pipeline import execute, settings
 from .public import VisitorDatabases
+
+GPU_CALL = ContextVar("gpu_call", default=False)
 
 
 class Question(BaseModel):
@@ -92,6 +95,8 @@ def create_app(database_url=None):
 
     app = FastAPI(title="Evidra", lifespan=lifespan)
     app.state.database = database
+    app.state.model_state = model_state
+    app.state.warm_models = warm_models
     database.install(app)
 
     def document_or_404(session, document_id):
@@ -123,6 +128,7 @@ def create_app(database_url=None):
             "public": database.public,
             "models_ready": model_state["ready"],
             "model_error": model_state["error"],
+            "zero_gpu": os.getenv("EVIDRA_ZERO_GPU", "0") == "1",
             **settings(),
         }
 
@@ -184,6 +190,8 @@ def create_app(database_url=None):
 
     @app.post("/api/questions", status_code=201)
     def question(body: Question):
+        if os.getenv("EVIDRA_ZERO_GPU", "0") == "1" and not GPU_CALL.get():
+            raise HTTPException(503, "Use the hosted GPU queue to ask a question.")
         if not model_state["ready"]:
             raise HTTPException(
                 503,
@@ -300,6 +308,8 @@ def create_app(database_url=None):
 
     @app.post("/api/evaluations", status_code=202)
     def evaluate(body: RunRequest, tasks: BackgroundTasks):
+        if os.getenv("EVIDRA_ZERO_GPU", "0") == "1" and not GPU_CALL.get():
+            raise HTTPException(503, "Use the hosted GPU queue to run an evaluation.")
         with database.session() as session:
             document = document_or_404(session, body.document_id)
             if document.source != "Bundled synthetic fixture":
@@ -327,6 +337,9 @@ def create_app(database_url=None):
                 )
             tasks.add_task(run_evaluation, database.current(), run.id)
             return {"id": run.id, "status": run.status}
+
+    app.state.ask = question
+    app.state.evaluate = evaluate
 
     @app.post("/api/voice/transcribe")
     async def audio(file: UploadFile = File(...)):

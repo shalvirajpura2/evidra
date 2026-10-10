@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import './style.css';
 import { VoiceConversation } from './VoiceConversation';
+import { Client } from '@gradio/client';
 
 type Reference = {
   id: string;
@@ -82,6 +83,8 @@ type Run = {
 type Page = 'Conversations' | 'References' | 'Review queue' | 'Evaluations' | 'Architecture';
 
 let sessionPromise: Promise<string> | null = null;
+let zeroGpu = false;
+let computeClient: Promise<Client> | null = null;
 async function visitorToken() {
   if (!sessionPromise)
     sessionPromise = (async () => {
@@ -112,6 +115,23 @@ async function fetchApi(path: string, options: RequestInit = {}, retry = true): 
   return response;
 }
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  if (zeroGpu && options.method === 'POST' && ['/questions', '/evaluations'].includes(path)) {
+    const token = await visitorToken();
+    if (!computeClient)
+      computeClient = Client.connect(`${window.location.origin}/compute`).catch((error) => {
+        computeClient = null;
+        throw error;
+      });
+    const client = await computeClient;
+    const prediction = await client.predict(path === '/questions' ? '/ask' : '/evaluate', [
+      token,
+      JSON.parse(String(options.body)),
+    ]);
+    const data = prediction.data as { ok: boolean; result?: T; error?: string }[];
+    if (!data[0]?.ok)
+      throw new Error(data[0]?.error || 'The GPU queue could not complete this request.');
+    return data[0].result as T;
+  }
   const response = await fetchApi(path, options);
   if (!response.ok) {
     const body = await response.json().catch(() => ({ detail: 'The request did not complete.' }));
@@ -119,7 +139,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       typeof body.detail === 'string' ? body.detail : 'Please check your input and try again.',
     );
   }
-  return response.json();
+  const result = await response.json();
+  if (path === '/health') zeroGpu = Boolean(result.zero_gpu);
+  return result;
 }
 const json = (body: unknown) => ({
   method: 'POST',
