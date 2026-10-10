@@ -64,13 +64,20 @@ def retrieve(question, passages):
 
 def settings():
     provider = os.getenv("EVIDRA_PROVIDER", "extractive")
-    if provider not in ("extractive", "ollama"):
-        raise ValueError("EVIDRA_PROVIDER must be extractive or ollama")
+    if provider not in ("extractive", "ollama", "transformers"):
+        raise ValueError("EVIDRA_PROVIDER must be extractive, ollama or transformers")
     return {
         "provider": provider,
         "model": (
-            os.getenv("EVIDRA_MODEL", "qwen3:8b")
-            if provider == "ollama"
+            os.getenv(
+                "EVIDRA_MODEL",
+                (
+                    "Qwen/Qwen2.5-1.5B-Instruct"
+                    if provider == "transformers"
+                    else "qwen3:8b"
+                ),
+            )
+            if provider != "extractive"
             else "verbatim-excerpts"
         ),
         "policy_version": POLICY_VERSION,
@@ -177,7 +184,16 @@ def execute(question, passages, previous_question=None, guarded=True):
             )
         else:
             try:
-                generated = ollama(question, evidence if guarded else [], guarded)
+                if config["provider"] == "transformers":
+                    from .models import generate
+
+                    generated = generate(
+                        context_question, evidence if guarded else [], guarded
+                    )
+                else:
+                    generated = ollama(
+                        context_question, evidence if guarded else [], guarded
+                    )
                 if not isinstance(generated.get("answer"), str) or not isinstance(
                     generated.get("citations"), list
                 ):
@@ -206,10 +222,18 @@ def execute(question, passages, previous_question=None, guarded=True):
                         "detail": f"Requested structured output from {config['model']}.",
                     }
                 )
-            except (httpx.HTTPError, ValueError, KeyError, TypeError):
+            except (
+                httpx.HTTPError,
+                ValueError,
+                KeyError,
+                TypeError,
+                RuntimeError,
+                ImportError,
+                OSError,
+            ):
                 disposition, reason, answer, citations = (
                     "review",
-                    "The local model could not complete a valid response. Check Ollama and try again.",
+                    "The model could not complete a valid response. It may be busy; try again shortly.",
                     "",
                     [],
                 )

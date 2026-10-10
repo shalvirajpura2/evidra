@@ -1,5 +1,44 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Kalam:wght@300;400&display=swap');
 
+.voice-conversation {
+  padding: 12px 4px;
+  border-top: 1px solid #2b3b32;
+  margin-bottom: 8px;
+}
+.voice-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 7px;
+}
+.voice-phase {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #c0d5bd;
+  text-transform: capitalize;
+}
+.voice-conversation small,
+.voice-transcript {
+  font-size: 11px;
+  color: #9fac9f;
+  line-height: 1.6;
+}
+.voice-error {
+  font-size: 12px;
+  color: #f3b9a9;
+}
+.demo-notice {
+  padding: 10px 24px;
+  color: #bac8b9;
+  background: #1b2920;
+  font-size: 11px;
+  line-height: 1.6;
+  border-bottom: 1px solid #2b3b32;
+}
+
 :root {
   font-family: 'DM Sans', sans-serif;
   color: #e8ede8;

@@ -1,0 +1,10 @@
+.git
+.venv
+data
+frontend/node_modules
+frontend/dist
+__pycache__
+.pytest_tmp
+.env
+*.log
+docs/screenshots

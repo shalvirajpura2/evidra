@@ -12,3 +12,4 @@ dist/
 *.log
 playwright-report/
 test-results/
+deploy/huggingface/evidra.zip

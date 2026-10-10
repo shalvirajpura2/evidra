@@ -15,6 +15,6 @@ Evidra's application code is independent. The doodles are original SVG paths. Re
 | Black | Python formatting | MIT |
 | Prettier | Frontend formatting | MIT |
 
-Optional model adapters: Ollama software (MIT) and Qwen3-8B weights (Apache-2.0); faster-whisper software (MIT); Kokoro model weights (Apache-2.0). Model and voice assets have their own notices. They are not vendored in this repository.
+Model adapters: Ollama software (MIT) and Qwen3-8B weights (Apache-2.0); the hosted demo's Qwen2.5-1.5B-Instruct weights (Apache-2.0), Transformers (Apache-2.0), PyTorch (BSD-3-Clause), and faster-whisper software (MIT). Speech uses Piper (GPL-3.0) with the public ljspeech-medium voice; its model card and LJSpeech dataset notice must be retained when distributing the voice. Model assets are downloaded separately and are not vendored in this repository. The previous optional Kokoro adapter has been replaced by Piper.
 
 The project plan discusses Docling, Sentence Transformers and pgvector as extension options. They are not part of the active base pipeline. See development notes for the exact current behavior.

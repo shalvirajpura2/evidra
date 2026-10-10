@@ -26,6 +26,7 @@ import {
   X,
 } from 'lucide-react';
 import './style.css';
+import { VoiceConversation } from './VoiceConversation';
 
 type Reference = {
   id: string;
@@ -80,8 +81,38 @@ type Run = {
 };
 type Page = 'Conversations' | 'References' | 'Review queue' | 'Evaluations' | 'Architecture';
 
+let sessionPromise: Promise<string> | null = null;
+async function visitorToken() {
+  if (!sessionPromise)
+    sessionPromise = (async () => {
+      const existing = localStorage.getItem('evidra.session');
+      if (existing && Number(existing.split('.')[1]) * 1000 > Date.now()) return existing;
+      const response = await fetch('/api/session', { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Could not start a demo session.');
+      if (data.token) localStorage.setItem('evidra.session', data.token);
+      else localStorage.removeItem('evidra.session');
+      return data.token as string;
+    })().catch((error) => {
+      sessionPromise = null;
+      throw error;
+    });
+  return sessionPromise;
+}
+async function fetchApi(path: string, options: RequestInit = {}, retry = true): Promise<Response> {
+  const headers = new Headers(options.headers);
+  const token = await visitorToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const response = await fetch(`/api${path}`, { ...options, headers });
+  if (response.status === 401 && retry) {
+    localStorage.removeItem('evidra.session');
+    sessionPromise = null;
+    return fetchApi(path, options, false);
+  }
+  return response;
+}
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`/api${path}`, options);
+  const response = await fetchApi(path, options);
   if (!response.ok) {
     const body = await response.json().catch(() => ({ detail: 'The request did not complete.' }));
     throw new Error(
@@ -142,6 +173,8 @@ function App() {
   const [references, setReferences] = useState<Reference[]>([]);
   const [selected, setSelected] = useState('');
   const [provider, setProvider] = useState('');
+  const [publicDemo, setPublicDemo] = useState(false);
+  const [modelsReady, setModelsReady] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -185,10 +218,31 @@ function App() {
   useEffect(() => {
     Promise.all([
       refresh(),
-      request<{ provider: string }>('/health').then((h) => setProvider(h.provider)),
+      request<{ provider: string; public: boolean; models_ready: boolean; model_error: string }>(
+        '/health',
+      ).then((h) => {
+        setProvider(h.provider);
+        setPublicDemo(h.public);
+        setModelsReady(h.models_ready);
+        if (h.model_error) setError(h.model_error);
+      }),
       request<Turn[]>(`/conversations/${conversation}`).then(setTurns),
     ]).catch((e) => setError(e.message));
   }, []);
+  useEffect(() => {
+    if (modelsReady) return;
+    const timer = setInterval(
+      () =>
+        request<{ models_ready: boolean; model_error: string }>('/health')
+          .then((h) => {
+            setModelsReady(h.models_ready);
+            if (h.model_error) setError(h.model_error);
+          })
+          .catch((e) => setError(e.message)),
+      6000,
+    );
+    return () => clearInterval(timer);
+  }, [modelsReady]);
   useEffect(() => {
     localStorage.setItem('evidra.conversation', conversation);
   }, [conversation]);
@@ -224,7 +278,7 @@ function App() {
     newConversation();
   }
   async function ask(text = question) {
-    if (!text.trim() || !selected || busy) return;
+    if (!text.trim() || !selected || busy || !modelsReady) return;
     setBusy(true);
     setError('');
     setQuestion('');
@@ -236,6 +290,7 @@ function App() {
       setTurns((previous) => [...previous, result]);
       setInspected(result);
       await refresh();
+      return result;
     } catch (e) {
       setError((e as Error).message);
       setQuestion(text);
@@ -313,7 +368,7 @@ function App() {
     setAudioBusy(true);
     setError('');
     try {
-      const response = await fetch(`/api/voice/speak/${turn.id}`, { method: 'POST' });
+      const response = await fetchApi(`/voice/speak/${turn.id}`, { method: 'POST' });
       if (!response.ok) {
         const body = await response.json();
         throw new Error(body.detail);
@@ -413,11 +468,28 @@ function App() {
           <div className="topbar-right">
             <span className="mode-pill">
               <span className={`tiny-dot ${provider ? '' : 'offline'}`} />
-              {provider === 'ollama' ? 'Local model' : provider ? 'Local evidence' : 'Connecting'}
+              {provider && provider !== 'extractive'
+                ? 'Open model'
+                : provider
+                  ? 'Local evidence'
+                  : 'Connecting'}
             </span>
             <span className="profile-bubble">S</span>
           </div>
         </header>
+        {!modelsReady && (
+          <div className="demo-notice" role="status">
+            The open models are warming up. References and architecture are available while you
+            wait.
+          </div>
+        )}
+        {publicDemo && (
+          <div className="demo-notice">
+            Public demo · your browser has a separate session, valid for 24 hours. Use sample
+            documents; records may disappear when hosting restarts. Voice recordings are processed
+            on this server and are not saved.
+          </div>
+        )}
         {error && (
           <div role="alert" className="error-banner">
             {error}
@@ -574,6 +646,12 @@ function App() {
                 )}
               </div>
               <div className="composer-wrap">
+                <VoiceConversation
+                  key={`${selected}:${conversation}`}
+                  disabled={busy || audioBusy || !selected || !modelsReady}
+                  send={ask}
+                  fetchApi={fetchApi}
+                />
                 <form
                   className="composer"
                   onSubmit={(e) => {
@@ -624,7 +702,7 @@ function App() {
                       <button
                         className="send-button"
                         aria-label="Send question"
-                        disabled={busy || !question.trim() || !selected}
+                        disabled={busy || !question.trim() || !selected || !modelsReady}
                       >
                         {busy ? (
                           <LoaderCircle size={17} className="spin" />
@@ -636,8 +714,8 @@ function App() {
                   </div>
                 </form>
                 <p className="composer-footnote">
-                  {provider === 'ollama'
-                    ? 'Local model · verify important claims against the source.'
+                  {provider && provider !== 'extractive'
+                    ? 'Open model · verify important claims against the source.'
                     : 'Local evidence mode · source excerpts, no LLM required.'}
                   <span>Ctrl + Enter to send</span>
                 </p>

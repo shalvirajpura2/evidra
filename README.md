@@ -31,6 +31,9 @@ Open the printed frontend URL. Vite proxies `/api` to the local backend. Start w
 
 - **Local evidence mode** runs without model downloads or API keys. It returns verbatim retrieved excerpts. It is not an LLM and is labeled that way in the interface.
 - **Ollama mode** uses a locally running model, configured with `EVIDRA_PROVIDER=ollama`, `EVIDRA_OLLAMA_URL`, and `EVIDRA_MODEL`. Evidence references and output schema are validated before display. The default model is `qwen3:8b`.
+- **Hosted open model mode** uses `EVIDRA_PROVIDER=transformers` and Qwen2.5-1.5B-Instruct on CPU. The public demo uses signed visitor sessions with separate databases. See [deployment notes](docs/deployment.md) for limits, packaging, and model setup.
+
+**Start voice** captures a short microphone turn, transcribes it with faster-whisper, sends it through the evidence pipeline, and plays a Piper reply. It listens again after playback. End voice releases the microphone; Interrupt & speak stops playback for the next turn. This is turn-taking voice with CPU latency, not simultaneous streaming audio.
 
 This is an engineering demo, not a medical product or a compliance certification. All bundled conversations and research facts are fictional. A citation existing does not prove that a model's interpretation is correct.
 

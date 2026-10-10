@@ -1,5 +1,7 @@
 import io
+import os
 import tempfile
+import wave
 from functools import lru_cache
 from pathlib import Path
 
@@ -8,7 +10,13 @@ from pathlib import Path
 def transcription_model():
     from faster_whisper import WhisperModel
 
-    return WhisperModel("base", device="cpu", compute_type="int8")
+    return WhisperModel(
+        os.getenv("EVIDRA_WHISPER_MODEL", "base.en"),
+        device="cpu",
+        compute_type="int8",
+        cpu_threads=2,
+        download_root="data/models/whisper",
+    )
 
 
 def transcribe(content):
@@ -16,7 +24,11 @@ def transcribe(content):
         file.write(content)
         name = file.name
     try:
-        segments, _ = transcription_model().transcribe(name)
+        segments, info = transcription_model().transcribe(
+            name, beam_size=1, language="en"
+        )
+        if info.duration > 30:
+            raise ValueError("Keep voice turns shorter than 30 seconds")
         return " ".join(segment.text.strip() for segment in segments)
     finally:
         Path(name).unlink(missing_ok=True)
@@ -24,16 +36,15 @@ def transcribe(content):
 
 @lru_cache(maxsize=1)
 def speech_model():
-    from kokoro import KPipeline
+    from piper import PiperVoice
 
-    return KPipeline(lang_code="a")
+    return PiperVoice.load(
+        os.getenv("EVIDRA_PIPER_MODEL", "data/models/en_US-ljspeech-medium.onnx")
+    )
 
 
 def speak(text):
-    import numpy as np
-    import soundfile as sf
-
-    audio = [item[2] for item in speech_model()(text, voice="af_heart")]
     buffer = io.BytesIO()
-    sf.write(buffer, np.concatenate(audio), 24000, format="WAV")
+    with wave.open(buffer, "wb") as wav_file:
+        speech_model().synthesize_wav(text, wav_file)
     return buffer.getvalue()

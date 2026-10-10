@@ -145,7 +145,7 @@ def run_evaluation(database, run_id):
                 "baseline_name": (
                     "Unfiltered excerpts"
                     if settings()["provider"] == "extractive"
-                    else "Ungrounded Ollama"
+                    else "Ungrounded model"
                 ),
             }
         rows = []
