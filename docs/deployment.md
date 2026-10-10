@@ -1,5 +1,7 @@
 # Public demo deployment
 
+Live demo: [Evidra on Hugging Face](https://huggingface.co/spaces/rshalvi/evidra). Published on October 10, 2026 after approval to expose the demo and uploaded source. The GitHub repository remains private. An unauthenticated launch check confirmed public visibility, RUNNING status, and healthy, ready models on ZeroGPU. Use the canonical Space page for the visitor's Hugging Face quota.
+
 The Docker image serves React and FastAPI from the same origin on port 7860. It includes CPU-only Qwen2.5-1.5B-Instruct, faster-whisper base.en, and Piper ljspeech-medium. Model downloads happen during image building; no paid inference API key is used.
 
 ## Visitor boundaries
@@ -28,6 +30,6 @@ The queued handler verifies the signed visitor token again, validates the payloa
 
 Share the canonical `https://huggingface.co/spaces/rshalvi/evidra` page. The official JavaScript client uses Hugging Face's browser handshake inside that page to apply the signed-in visitor's quota. A direct `hf.space` tab uses anonymous API quota and reached its run limit during staging. The canonical signed-in view successfully ran further questions and the full evaluation without a copied user token or shared creator token. The application displays a link back to that page. Free quota remains finite; this is not unlimited public inference.
 
-A public Space exposes uploaded source; keep it private until that disclosure is approved. The GitHub repository can remain private. Free Spaces can sleep and may cold-start; availability and model performance are not guaranteed.
+A public Space exposes uploaded source; that disclosure was approved for this demo. The GitHub repository remains private. Free Spaces can sleep and may cold-start; availability and model performance are not guaranteed.
 
 Before public launch verify two independent visitor tokens, upload isolation, audio upload/transcription, model answers, speech bytes, and the browser controls. Free hosting is suitable for a small portfolio demo. For persistent accounts and higher traffic, add durable storage, identity, a job queue, operational monitoring, and dedicated compute.
