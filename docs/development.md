@@ -29,7 +29,7 @@ Restart the API and reload the workspace. This mode requires actual model resour
 
 ## Optional speech
 
-Install `.[voice]` in a compatible Python environment. The adapters use faster-whisper's base transcription model and Kokoro for speech. First invocation can download their models. Use the headphones button to upload a short audio file; read-aloud is available on answered turns. Native speech dependencies and the model path were not exercised in the base verification. The UI reports unavailable speech clearly.
+Install `.[voice]` in a compatible Python environment. The adapters now use faster-whisper's base.en transcription model and Piper for speech. Download a voice with `python -m piper.download_voices --data-dir data/models en_US-ljspeech-medium`. First transcription downloads its recognition model. PyAV is limited to version 16 because version 19 broke the decoder API used by faster-whisper 1.2.1. A synthetic Piper question was successfully transcribed locally after this fix. Use Start voice for microphone turns, the headphones button for audio uploads, and Read aloud for saved answers. See deployment notes for voice behavior and public sessions.
 
 ## Current retrieval and parsing
 
