@@ -14,6 +14,8 @@ export function VoiceConversation({ disabled, send, fetchApi, language = 'en', o
   const [phase, setPhase] = useState('idle');
   const [error, setError] = useState('');
   const [transcript, setTranscript] = useState('');
+  const [handsFree, setHandsFree] = useState(false);
+  const finishQuestion = useRef<(() => void) | null>(null);
   const running = useRef(false);
   const generation = useRef(0);
   const stream = useRef<MediaStream | null>(null);
@@ -40,6 +42,7 @@ export function VoiceConversation({ disabled, send, fetchApi, language = 'en', o
     audioUrl.current = '';
   }
   function releaseInput() {
+    finishQuestion.current = null;
     if (timer.current) clearInterval(timer.current);
     timer.current = null;
     if (recorder.current?.state === 'recording') recorder.current.stop();
@@ -131,6 +134,10 @@ export function VoiceConversation({ disabled, send, fetchApi, language = 'en', o
         if (event.data.size) chunks.push(event.data);
       };
       let heardSpeech = false;
+      finishQuestion.current = () => {
+        heardSpeech = true;
+        releaseInput();
+      };
       capture.onstop = () => {
         if (!running.current || turn !== generation.current) return;
         if (!heardSpeech) {
@@ -160,7 +167,10 @@ export function VoiceConversation({ disabled, send, fetchApi, language = 'en', o
           heardSpeech = true;
           lastSpeech = Date.now();
         }
-        if ((heardSpeech && Date.now() - lastSpeech > 1400) || Date.now() - started > 25000)
+        if (
+          (handsFree && heardSpeech && Date.now() - lastSpeech > 2400) ||
+          Date.now() - started > 25000
+        )
           releaseInput();
       }, 100);
     } catch (caught) {
@@ -204,8 +214,12 @@ export function VoiceConversation({ disabled, send, fetchApi, language = 'en', o
               {phase}
             </span>
             {phase === 'listening' && (
-              <button type="button" className="text-button" onClick={releaseInput}>
-                Send now
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => finishQuestion.current?.()}
+              >
+                {language === 'hi' ? 'प्रश्न भेजें' : 'Send my question'}
               </button>
             )}
             {phase === 'speaking' && (
@@ -219,10 +233,24 @@ export function VoiceConversation({ disabled, send, fetchApi, language = 'en', o
           </>
         )}
       </div>
+      {phase === 'idle' && (
+        <label className="voice-mode">
+          <input
+            type="checkbox"
+            checked={handsFree}
+            onChange={(event) => setHandsFree(event.target.checked)}
+          />{' '}
+          {language === 'hi' ? 'रुकने पर अपने आप भेजें' : 'Send automatically when I pause'}
+        </label>
+      )}
       <small>
-        {language === 'hi'
-          ? 'बोलें, फिर रुकें। जवाब सुनने के बाद आप फिर बोल सकते हैं।'
-          : 'Speak, then pause. Your assistant replies aloud and listens again.'}
+        {handsFree
+          ? language === 'hi'
+            ? 'बोलें, फिर थोड़ा रुकें। जवाब के बाद फिर बोल सकते हैं।'
+            : 'Speak, then pause for a moment. Your assistant replies and listens again.'
+          : language === 'hi'
+            ? 'पूरा प्रश्न बोलें, फिर “प्रश्न भेजें” दबाएँ। जवाब के बाद फिर बोल सकते हैं।'
+            : 'Say your whole question, then press “Send my question.” After the reply, ask another.'}
       </small>
       {transcript && <p className="voice-transcript">Heard: {transcript}</p>}
       {error && (
