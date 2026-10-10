@@ -12,7 +12,6 @@ preload_from_hub:
   - Qwen/Qwen2.5-1.5B-Instruct
   - Systran/faster-whisper-small
   - Systran/faster-whisper-medium
-  - Helsinki-NLP/opus-mt-hi-en
   - facebook/nllb-200-distilled-600M
 ---
 
@@ -26,7 +25,7 @@ Choose **हिन्दी · Hindi** to ask and hear replies in Hindi. The dem
 
 ## Built with open models
 
-Qwen2.5-1.5B-Instruct answers on ZeroGPU. Whisper small transcribes English and medium transcribes Hindi. Marian translates questions; NLLB translates cited replies and Piper generates English and Hindi audio on CPU. No paid inference API is used.
+Qwen2.5-1.5B-Instruct answers on ZeroGPU. Whisper small transcribes English and medium transcribes Hindi. NLLB translates questions and cited replies and Piper generates English and Hindi audio on CPU. No paid inference API is used.
 
 Each browser gets a separate temporary workspace. Use non-sensitive files; records can disappear on restart. Raw recordings are deleted after transcription. The Northstar handbook and Aster evaluation reference are fictional.
 

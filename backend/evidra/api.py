@@ -69,7 +69,6 @@ def create_app(database_url=None):
                 )
             model_pair()
             translation_pair()
-            translation_pair("en-hi")
             transcription_model()
             transcription_model("hi")
             speech_model()

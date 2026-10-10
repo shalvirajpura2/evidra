@@ -26,3 +26,5 @@ Hindi speech uses Piper's `hi_IN-pratham-medium` voice. Its [individual model ca
 Whisper small handles English; Whisper medium handles Hindi. Marian OPUS hi-en translates Hindi questions to English for retrieval (Apache-2.0). The initial Marian en-hi reply translator was replaced after hosted quality testing. Reply translation must preserve numbers; failed translation withholds the draft. This does not establish Hindi document retrieval or translation accuracy.
 
 Hindi reply translation uses [Meta NLLB distilled 600M](https://huggingface.co/facebook/nllb-200-distilled-600M), CC-BY-NC-4.0, after Marian en-hi mistranslated a meeting time in hosted testing. It is a research model used here for a noncommercial portfolio demo, not certified or production translation. Marian hi-en remains Apache-2.0. Number preservation is checked; semantic translation errors remain possible.
+
+The final Hindi path uses one shared NLLB model for both directions, with explicit source/target language tokens. Marian was removed after it distorted the equipment-reimbursement question. The translation weights are CC-BY-NC-4.0; component code remains separately licensed.

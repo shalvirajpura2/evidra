@@ -14,6 +14,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="https://rshalvi-evidra.hf.space")
     parser.add_argument(
+        "--audio",
+        type=Path,
+        help="Also transcribe this synthetic Hindi clip for ten concurrent visitors",
+    )
+    parser.add_argument(
         "--gpu",
         action="store_true",
         help="Submit ten real queued model questions; consumes free GPU quota",
@@ -55,6 +60,28 @@ def main():
         assert (
             response.status_code == 404
         ), "Cross-visitor document access was not rejected"
+
+    speech_results = []
+    if args.audio:
+        content = args.audio.read_bytes()
+
+        def transcribe(visitor):
+            began = perf_counter()
+            with httpx.Client(base_url=args.url, timeout=120) as client:
+                reply = client.post(
+                    "/api/voice/transcribe",
+                    headers={"Authorization": "Bearer " + visitor["token"]},
+                    data={"language": "hi"},
+                    files={"file": (args.audio.name, content, "audio/wav")},
+                )
+                return {
+                    "status": reply.status_code,
+                    "seconds": round(perf_counter() - began, 2),
+                    "text": reply.json().get("text", ""),
+                }
+
+        with ThreadPoolExecutor(max_workers=10) as pool:
+            speech_results = list(pool.map(transcribe, visitors))
 
     results = []
     if args.gpu:
@@ -144,6 +171,7 @@ def main():
         "correct_answers_with_audio": sum(row["ok"] for row in results),
         "elapsed_seconds": round(perf_counter() - started, 2),
         "results": results,
+        "speech_results": speech_results,
         "scope": "Synthetic documents, anonymous public REST clients. Free GPU quotas apply. Not a human microphone benchmark.",
     }
     if results:

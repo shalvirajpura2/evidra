@@ -43,7 +43,7 @@ microphone → whisper → document search → qwen + citation checks → piper 
 
 React provides the browser experience. FastAPI owns documents, transcripts, and reviews. A signed visitor token selects a separate SQLite database. Gradio queues model requests on Hugging Face ZeroGPU. Speech runs on CPU with bounded concurrency.
 
-The hosted models are Qwen2.5-1.5B-Instruct, faster-whisper small for English and medium for Hindi, Marian and NLLB translators, and Piper voices for English and Hindi. There is no paid inference API dependency. Component and voice licenses are documented in [open-source components](docs/open-source.md). The Hindi Pratham voice has a **noncommercial, share-alike dataset license**; this portfolio demo is not a commercially licensed voice service.
+The hosted models are Qwen2.5-1.5B-Instruct, faster-whisper small for English and medium for Hindi, NLLB translation, and Piper voices for English and Hindi. There is no paid inference API dependency. Component and voice licenses are documented in [open-source components](docs/open-source.md). The Hindi Pratham voice has a **noncommercial, share-alike dataset license**; this portfolio demo is not a commercially licensed voice service.
 
 ## Capacity and honest limits
 
