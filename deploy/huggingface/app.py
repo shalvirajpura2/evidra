@@ -68,7 +68,9 @@ compute.launch(
     ssr_mode=False,
 )
 # Mount the compute queue before the catch-all React static route.
-static_routes = [route for route in app.routes if getattr(route, "path", None) == "/"]
+static_routes = [
+    route for route in app.routes if getattr(route, "path", None) in ("", "/")
+]
 for route in static_routes:
     app.routes.remove(route)
 app = gr.mount_gradio_app(app, compute, path="/compute")
