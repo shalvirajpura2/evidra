@@ -515,6 +515,19 @@ function App() {
             Public demo · your browser has a separate session, valid for 24 hours. Use sample
             documents; records may disappear when hosting restarts. Voice recordings are processed
             on this server and are not saved.
+            {zeroGpu && (
+              <>
+                {' '}
+                Free GPU use has daily limits.{' '}
+                <a
+                  href="https://huggingface.co/spaces/rshalvi/evidra"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open on Hugging Face and sign in for your account's quota.
+                </a>
+              </>
+            )}
           </div>
         )}
         {error && (
@@ -969,8 +982,8 @@ function App() {
               <CircleHelp size={17} />
               <span>
                 This measures expected routing on synthetic fixtures, not medical accuracy.{' '}
-                {provider === 'ollama'
-                  ? 'The baseline uses the same local model without evidence.'
+                {['ollama', 'transformers'].includes(provider)
+                  ? 'The baseline uses the same model with the evidence constraints disabled.'
                   : 'The baseline returns unfiltered excerpts; no LLM runs in this mode.'}
               </span>
             </div>
