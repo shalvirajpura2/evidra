@@ -2,7 +2,7 @@
 
 Live demo: [Evidra on Hugging Face](https://huggingface.co/spaces/rshalvi/evidra). Published on October 10, 2026 after approval to expose the demo and uploaded source. The GitHub repository remains private. An unauthenticated launch check confirmed public visibility, RUNNING status, and healthy, ready models on ZeroGPU. Use the canonical Space page for the visitor's Hugging Face quota.
 
-The Docker image serves React and FastAPI from the same origin on port 7860. It includes CPU-only Qwen2.5-1.5B-Instruct, faster-whisper base.en, and Piper ljspeech-medium. Model downloads happen during image building; no paid inference API key is used.
+The Docker image serves React and FastAPI from the same origin on port 7860. It includes CPU-only Qwen2.5-1.5B-Instruct, faster-whisper small for English and medium for Hindi, and Piper English and Hindi voices. Model downloads happen during image building; no paid inference API key is used.
 
 ## Visitor boundaries
 
@@ -16,13 +16,13 @@ Records are temporary. Space disk is ephemeral, and expired uncached visitor dat
 
 Start voice requests browser microphone permission. Each recording stops after speech followed by 1.4 seconds of quiet, or at 25 seconds. It is transcribed, passed through the existing evidence pipeline, and spoken. The microphone reopens after playback. Send now bypasses silence waiting; End voice releases the microphone and stops playback. Interrupt & speak stops the current reply and listens for a new turn. Listening pauses while generating and speaking to prevent recording the app's own output.
 
-This is a turn-taking voice conversation, not simultaneous full-duplex audio or token/audio streaming. CPU generation can take several seconds. Use headphones in a quiet room. Current speech recognition is English.
+This is a turn-taking voice conversation, not simultaneous full-duplex audio or token/audio streaming. CPU generation can take several seconds. Use headphones in a quiet room. Speech recognition supports English and Hindi. Hindi questions are translated into English inside the GPU job before retrieval; the original question and translated search text are retained. Hindi answers are requested in Devanagari and Piper selects the language stored with the turn. This version targets English documents.
 
 ## Hugging Face Spaces
 
 The account's creation screen currently marks Docker as paid and offers Gradio/ZeroGPU as its free tier. The first private staging package stopped with `No @spaces.GPU function detected during startup`. The adapter now registers real question and evaluation GPU handlers in Gradio, mounted at `/compute` before React's static route. The official Gradio JavaScript client submits those operations from the existing interface. Other document, review, and speech endpoints remain in FastAPI. Direct HTTP question and evaluation endpoints are disabled in ZeroGPU mode.
 
-Hugging Face's current documentation requires a paid plan to create ordinary compute Spaces, while eligible free accounts can create two Gradio ZeroGPU Spaces. The question handler requests up to 45 seconds and evaluation up to 90 seconds. Both share one model concurrency slot and a 16-job queue. Visitors are subject to Hugging Face's GPU quotas and queue availability; quota failures must be reported, never silently replaced with another provider. No paid plan or compute purchase has been authorized.
+Hugging Face's current documentation requires a paid plan to create ordinary compute Spaces, while eligible free accounts can create two Gradio ZeroGPU Spaces. The question handler requests up to 45 seconds for English or 90 seconds for Hindi translation plus answering; evaluation requests up to 90 seconds. Both share one model concurrency slot and a 16-job queue. Visitors are subject to Hugging Face's GPU quotas and queue availability; quota failures must be reported, never silently replaced with another provider. No paid plan or compute purchase has been authorized.
 
 The queued handler verifies the signed visitor token again, validates the payload, and reopens only that visitor's already-created SQLite database with a fresh engine. It never inherits a pooled database connection into a GPU worker. It resets database and GPU contexts after each call. Tokens travel as queue inputs, never in URLs. Session isolation and direct-endpoint rejection have regression tests. Model weights are loaded onto emulated CUDA at module startup as required by ZeroGPU, then used on the allocated GPU inside the decorated handlers. CPU mode remains available locally.
 

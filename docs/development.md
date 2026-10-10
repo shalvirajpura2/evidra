@@ -29,7 +29,7 @@ Restart the API and reload the workspace. This mode requires actual model resour
 
 ## Optional speech
 
-Install `.[voice]` in a compatible Python environment. The adapters now use faster-whisper's base.en transcription model and Piper for speech. Download a voice with `python -m piper.download_voices --data-dir data/models en_US-ljspeech-medium`. First transcription downloads its recognition model. PyAV is limited to version 16 because version 19 broke the decoder API used by faster-whisper 1.2.1. A synthetic Piper question was successfully transcribed locally after this fix. Use Start voice for microphone turns, the headphones button for audio uploads, and Read aloud for saved answers. See deployment notes for voice behavior and public sessions.
+Install `.[voice]` in a compatible Python environment. The adapters now use Whisper small for English and medium for Hindi and Piper for speech. Download a voice with `python -m piper.download_voices --data-dir data/models en_US-ljspeech-medium hi_IN-pratham-medium`. First transcription downloads its recognition model. PyAV is limited to version 16 because version 19 broke the decoder API used by faster-whisper 1.2.1. A synthetic Piper question was successfully transcribed locally after this fix. Use Start voice for microphone turns, the headphones button for audio uploads, and Read aloud for saved answers. See deployment notes for voice behavior and public sessions.
 
 ## Current retrieval and parsing
 
@@ -49,6 +49,8 @@ The fixture suite initially surfaced a singular “dose” question that retriev
 
 ## Persistence and access
 
-Local records live in `data/evidra.db`, which is ignored by Git. PostgreSQL can be selected with `EVIDRA_DATABASE_URL` and the `postgres` extra; that deployment path has not been integration-tested. Do not expose this unauthenticated workspace publicly. Public deployment needs identity, tenancy and abuse controls first.
+Local records live in `data/evidra.db`, which is ignored by Git. PostgreSQL can be selected with `EVIDRA_DATABASE_URL` and the `postgres` extra; that deployment path has not been integration-tested. The default local workspace is unauthenticated. Public demo mode uses signed temporary sessions, separate visitor databases, and bounded requests; see deployment notes before exposing an instance.
 
 The interface's fonts are loaded from Google Fonts, with system fallbacks. Document content is not sent with font requests. Original doodles live in the React source as SVG paths.
+
+Hindi document conversations also need `.[chat]` and Transformers mode. The Marian models download on first use. Set `EVIDRA_WHISPER_HINDI_MODEL` to a local model directory if needed. The base extractive mode supports English questions without model downloads.

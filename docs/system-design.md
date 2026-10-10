@@ -54,3 +54,13 @@ Keep this as a modular monolith until work volume justifies separation. Move SQL
 
 Rule-based intent classification can miss unusual safety language. Token matching misses paraphrases. Citation membership checks establish provenance, not semantic support. SQLite is a single-workspace choice; the app does not claim production tenancy or medical validation. Evaluation outcomes measure fixture expectations, not clinical accuracy.
 
+
+## Guided voice experience
+
+The primary visitor flow is choose a document → talk → check the source. `Guided.tsx` owns that journey; the existing version, review, evaluation and architecture tools are lazy-loaded in `Workbench.tsx`. Both use the same API session module, so moving between views retains visitor isolation without creating another identity.
+
+The Northstar sample is created idempotently per visitor through `/api/demo`. The Aster evaluation fixture stays separate. Voice state controls prevent changing documents or language during a microphone turn. An aborted voice request cancels its queued subscription; a request already executing may still finish on the server. The app checks its conversation generation before displaying a response.
+
+Hindi transcription uses multilingual Whisper. The question is translated into English in the GPU handler before existing retrieval and policy checks. The original transcript, translated search text, language and citations are retained. Qwen generates a cited English answer. Marian opus-mt-en-hi translates it into Hindi, with a number-preservation check. Marian opus-mt-hi-en translates incoming questions on CPU. Translation quality is not guaranteed for malformed transcripts. Failed translation returns an error rather than a fabricated answer. Stored language selects the matching Piper voice for replay.
+
+The shared model queue has 16 waiting jobs and one inference slot. CPU voice work has two slots and a 30-second bounded wait. This is suitable for testing ten independent sessions with queues; it is not a guarantee of ten simultaneous low-latency calls on free hardware. Heavy evaluations share the same queue and can delay questions.

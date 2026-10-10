@@ -1,14 +1,60 @@
 # Evidra
 
-An answer should come with something you can check.
+**Turn a document into a voice assistant.**
 
-Evidra is an independent workspace for document-backed conversations, review queues, and repeatable evaluations. It is built to make the awkward cases visible: missing evidence, invented citations, ambiguous questions, and changes between document versions.
+Evidra lets someone ask questions about a handbook, product guide, or set of notes instead of searching through pages. They can speak in English or Hindi, hear a short reply, and check the passage behind it.
 
-The interface pairs charcoal surfaces and mint accents with a few hand-drawn SVG illustrations. The product has its own identity and implementation. Public engineering writing from Synthio Labs helped frame the problem; Evidra is not affiliated with Synthio.
+[Try the live demo](https://huggingface.co/spaces/rshalvi/evidra)
 
-![Evidra workspace](docs/screenshots/workspace.jpg)
+![Choose a document, talk to it, and check the source](docs/screenshots/guided.jpg)
 
-## Development
+## See it in one minute
+
+1. Choose **Try the sample**. A fictional company handbook is ready immediately.
+2. Click **Start talking**, allow the microphone, and ask: “How many days of paid leave do I get?”
+3. Pause. The assistant replies aloud and shows the handbook passage: employees receive 24 days each year.
+
+Choose **हिन्दी · Hindi** to ask “मुझे साल में कितने दिन की छुट्टी मिलती है?” You can also type a question or upload a searchable PDF, text file, or Markdown document.
+
+## Why build this?
+
+An answer without a source is hard to trust. A document without a way to ask questions is hard to use. Evidra brings the two together in a small, inspectable voice experience.
+
+This is an independent portfolio project demonstrating voice-agent engineering: microphone capture, speech recognition, document retrieval, constrained model answers, speech playback, interruption, and visitor isolation. It is not affiliated with Synthio Labs.
+
+## What a visitor can do
+
+- Talk to a document in English or Hindi. Hindi questions are translated into English for retrieval; cited English replies are translated into Hindi.
+- Inspect the original source beside each answer. Missing evidence produces an explanation rather than an invented answer.
+- Stop a reply and speak again. Voice is turn-taking: the microphone pauses while the assistant answers.
+- Bring a document up to 5 MB. Scanned PDFs need OCR first.
+- Open **Explore the engineering** for reference versions, human reviews, the evaluation suite, and system design.
+
+The interface follows three steps: **choose → talk → check**. An English company handbook is the default example; the fictional Aster research fixture remains available for engineering evaluations.
+
+## How it works
+
+```text
+microphone → whisper → document search → qwen + citation checks → piper → speaker
+                              ↓                  ↓
+                         source passages    transcript + review trail
+```
+
+React provides the browser experience. FastAPI owns documents, transcripts, and reviews. A signed visitor token selects a separate SQLite database. Gradio queues model requests on Hugging Face ZeroGPU. Speech runs on CPU with bounded concurrency.
+
+The hosted models are Qwen2.5-1.5B-Instruct, faster-whisper small for English and medium for Hindi, Marian translators, and Piper voices for English and Hindi. There is no paid inference API dependency. Component and voice licenses are documented in [open-source components](docs/open-source.md). The Hindi Pratham voice has a **noncommercial, share-alike dataset license**; this portfolio demo is not a commercially licensed voice service.
+
+## Capacity and honest limits
+
+The target is ten independent visitors using the same demo with queued inference. That is different from ten simultaneous real-time calls. Free GPU quotas, shared CPU resources, and cold starts can cause waits. Visitors should use the canonical Hugging Face page and sign in for their own quota.
+
+Workspaces are temporary and expire after 24 hours; hosting restarts can erase them sooner. Raw audio files are deleted after transcription. Use non-sensitive documents. Hindi pronunciation, transcription, and translation need human verification, and a valid citation does not guarantee a correct interpretation.
+
+See [verification results](docs/verification.md) for measured checks and their scope, and [deployment](docs/deployment.md) for the queue and session boundaries.
+
+## Run locally
+
+Use Python 3.12 and Node.js. The default local mode returns document excerpts without downloading a language model.
 
 ```powershell
 python -m venv .venv
@@ -17,7 +63,7 @@ python -m venv .venv
 .venv\Scripts\python -m uvicorn evidra.api:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
-In a second terminal:
+In another terminal:
 
 ```powershell
 cd frontend
@@ -25,26 +71,14 @@ npm ci
 npm run dev
 ```
 
-Open the printed frontend URL. Vite proxies `/api` to the local backend. Start with the included fictional reference or import your own text/Markdown/PDF. Documents and review history persist in `data/evidra.db`.
+Open http://127.0.0.1:5173. For local language-model and voice setup, see [development](docs/development.md). Hindi model answers require Transformers mode; local evidence mode does not translate questions.
 
-## Model modes
+## Engineering details
 
-- **Local evidence mode** runs without model downloads or API keys. It returns verbatim retrieved excerpts. It is not an LLM and is labeled that way in the interface.
-- **Ollama mode** uses a locally running model, configured with `EVIDRA_PROVIDER=ollama`, `EVIDRA_OLLAMA_URL`, and `EVIDRA_MODEL`. Evidence references and output schema are validated before display. The default model is `qwen3:8b`.
-- **Hosted open model mode** uses `EVIDRA_PROVIDER=transformers` and Qwen2.5-1.5B-Instruct on CPU. The public demo uses signed visitor sessions with separate databases. See [deployment notes](docs/deployment.md) for limits, packaging, and model setup.
-
-**Start voice** captures a short microphone turn, transcribes it with faster-whisper, sends it through the evidence pipeline, and plays a Piper reply. It listens again after playback. End voice releases the microphone; Interrupt & speak stops playback for the next turn. This is turn-taking voice with CPU latency, not simultaneous streaming audio.
-
-This is an engineering demo, not a medical product or a compliance certification. All bundled conversations and research facts are fictional. A citation existing does not prove that a model's interpretation is correct.
-
-## Checks
+[System design](docs/system-design.md) · [Decisions](docs/decisions.md) · [Evaluation scope](docs/evaluations.md) · [Deployment](docs/deployment.md)
 
 ```powershell
 .venv\Scripts\python -m pytest
 cd frontend
 npm run build
 ```
-
-See [system design](docs/system-design.md), [decisions](docs/decisions.md), and [evaluation notes](docs/evaluations.md) for behavior, tradeoffs and limits.
-
-The pinned setup was tested with Python 3.12. See [development notes](docs/development.md), [open-source components](docs/open-source.md), and [verification results](docs/verification.md) for optional model setup and the tested scope.

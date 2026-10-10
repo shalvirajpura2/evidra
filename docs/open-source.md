@@ -18,3 +18,9 @@ Evidra's application code is independent. The doodles are original SVG paths. Re
 Model adapters: Ollama software (MIT) and Qwen3-8B weights (Apache-2.0); the hosted demo's Qwen2.5-1.5B-Instruct weights (Apache-2.0), Transformers (Apache-2.0), PyTorch (BSD-3-Clause), and faster-whisper software (MIT). Speech uses Piper (GPL-3.0) with the public ljspeech-medium voice; its model card and LJSpeech dataset notice must be retained when distributing the voice. Model assets are downloaded separately and are not vendored in this repository. The previous optional Kokoro adapter has been replaced by Piper.
 
 The project plan discusses Docling, Sentence Transformers and pgvector as extension options. They are not part of the active base pipeline. See development notes for the exact current behavior.
+
+## Hindi voice
+
+Hindi speech uses Piper's `hi_IN-pratham-medium` voice. Its [individual model card](https://huggingface.co/rhasspy/piper-voices/blob/main/hi/hi_IN/pratham/medium/MODEL_CARD) specifies **CC-BY-NC-SA-4.0** for the dataset. This restriction is separate from the repository's general license badge. The hosted application is a noncommercial portfolio demonstration; do not offer this voice as a commercial service without appropriate rights or replacing it with a suitably licensed voice. Keep attribution and share-alike notices with redistributed assets. Voice weights remain outside the GitHub repository and source archive.
+
+Whisper small handles English; Whisper medium handles Hindi. Marian OPUS models translate Hindi questions to English for retrieval and cited English replies into Hindi. Both Helsinki-NLP/opus-mt-hi-en and opus-mt-en-hi are Apache-2.0. Reply translation must preserve numbers; failed translation withholds the draft. This does not establish Hindi document retrieval or translation accuracy.

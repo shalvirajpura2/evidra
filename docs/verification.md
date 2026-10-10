@@ -22,3 +22,15 @@ Private ZeroGPU staging successfully loaded Qwen2.5-1.5B-Instruct, faster-whispe
 Hosted missing-dose abstention, safety review creation, and review resolution passed. The hosted 40-case model evaluation completed within its GPU duration, matching 35/40 guarded routing decisions (87.5%) and 2/40 baseline decisions (5%). Five guarded cases did not match the expected route. These results are separate from the earlier 40/40 extractive policy run and must not be represented as model accuracy. The direct app tab hit the anonymous API run limit; the canonical signed-in Hugging Face view continued working and completed the evaluation through the official client's identity handshake. No account access token was copied into application code or shared among visitors.
 
 Signed temporary sessions are implemented for the bounded public demo; this does not provide persistent user accounts.
+
+## Guided experience and Hindi checks — October 10, 2026
+
+- 17 backend tests passed, including ten concurrent visitors creating samples, uploading distinct documents, asking questions, and attempting cross-visitor document, conversation and audio access. The model in this concurrency test is extractive; it proves HTTP/database boundaries, not GPU throughput.
+- Hindi API tests use model doubles to verify original transcript retention, translated retrieval, citation validation and fail-closed translation handling. They do not establish translation quality.
+- Actual Piper Hindi synthesis produced a 111,660-byte WAV for “मुझे साल में कितने दिन की छुट्टी मिलती है?” Multilingual Whisper small returned “मुझे साल में कितने दिन की चुटी मिलती है”, including a spelling error. This is a synthetic speech check, not a human accent or microphone benchmark.
+- The guided frontend passed TypeScript and Vite builds. Browser checks confirmed sample onboarding and an English answer with its supporting passage. The desktop browser did not apply the requested phone viewport override, so device-sized visual QA is not yet verified.
+- Sixteen original GitHub commit messages were changed to lowercase conventional prefixes. Commit trees, authors and timestamps were preserved. The complete prior history is in the ignored local bundle `data/history-before-message-change.bundle`.
+
+The public HTTP capacity probe created ten independent visitor workspaces and distinct uploads concurrently. All ten cross-visitor document requests returned 404. Ten anonymous GPU jobs were rejected by the Hugging Face runs quota; ten-user model throughput is therefore unverified. Signed-in canonical-browser requests succeeded with the English paid-leave answer and source.
+
+The first Hindi release failed a real user microphone check: the transcript was misspelled and retrieval abstained. Dedicated hi-en translation recovered a clean question, but the chat model returned malformed Hindi. The corrected path uses Whisper medium for Hindi and translates a validated English answer through Marian en-hi, rejecting changed numbers. Eighteen backend tests pass, including a number-preservation regression. Hosted checks below record actual model behavior separately from test doubles.
