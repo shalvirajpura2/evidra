@@ -1,8 +1,13 @@
 from contextlib import asynccontextmanager
+import asyncio
+import os
+from pathlib import Path
 from uuid import uuid4
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
+from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
@@ -10,6 +15,7 @@ from .db import Database, Document, Passage, Review, Run, Turn
 from .documents import ingest, seed
 from .evaluations import CASES, run_evaluation
 from .pipeline import execute, settings
+from .public import VisitorDatabases
 
 
 class Question(BaseModel):
@@ -28,7 +34,41 @@ class RunRequest(BaseModel):
 
 
 def create_app(database_url=None):
-    database = Database(database_url)
+    database = VisitorDatabases(Database(database_url))
+    warming = os.getenv("EVIDRA_WARM_MODELS", "0") == "1"
+    model_state = {"ready": not warming, "error": ""}
+
+    def warm_models():
+        try:
+            import subprocess
+            import sys
+            from .models import model_pair
+            from .voice import transcription_model, speech_model
+
+            Path("data/models").mkdir(parents=True, exist_ok=True)
+            if not Path("data/models/en_US-ljspeech-medium.onnx").is_file():
+                subprocess.run(
+                    [
+                        sys.executable,
+                        "-m",
+                        "piper.download_voices",
+                        "--data-dir",
+                        "data/models",
+                        "en_US-ljspeech-medium",
+                    ],
+                    check=True,
+                )
+            model_pair()
+            transcription_model()
+            speech_model()
+            model_state["ready"] = True
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+            model_state["error"] = (
+                "The demo models could not start. Please try again later."
+            )
 
     @asynccontextmanager
     async def lifespan(app):
@@ -44,11 +84,15 @@ def create_app(database_url=None):
                     "error": "Server restarted before this run finished.",
                 }
             session.commit()
+        task = asyncio.create_task(run_in_threadpool(warm_models)) if warming else None
         yield
+        if task:
+            task.cancel()
         database.engine.dispose()
 
     app = FastAPI(title="Evidra", lifespan=lifespan)
     app.state.database = database
+    database.install(app)
 
     def document_or_404(session, document_id):
         document = session.get(Document, document_id)
@@ -74,7 +118,13 @@ def create_app(database_url=None):
 
     @app.get("/api/health")
     def health():
-        return {"status": "ok", **settings()}
+        return {
+            "status": "ok",
+            "public": database.public,
+            "models_ready": model_state["ready"],
+            "model_error": model_state["error"],
+            **settings(),
+        }
 
     @app.get("/api/documents")
     def documents():
@@ -108,10 +158,20 @@ def create_app(database_url=None):
         title = (title.strip() or file.filename or "Untitled reference")[:200]
         try:
             with database.session() as session:
+                if (
+                    database.public
+                    and session.scalar(select(func.count()).select_from(Document)) >= 11
+                ):
+                    raise HTTPException(
+                        429,
+                        "This demo allows ten imported reference versions per session.",
+                    )
                 document = ingest(
                     session, file.filename or "upload.txt", content, title
                 )
                 return document_dict(session, document)
+        except HTTPException:
+            raise
         except (ValueError, UnicodeError):
             raise HTTPException(
                 422,
@@ -124,9 +184,20 @@ def create_app(database_url=None):
 
     @app.post("/api/questions", status_code=201)
     def question(body: Question):
+        if not model_state["ready"]:
+            raise HTTPException(
+                503,
+                model_state["error"]
+                or "The open models are warming up. Please try again shortly.",
+            )
         if not body.question.strip():
             raise HTTPException(422, "Please enter a question.")
         with database.session() as session:
+            if (
+                database.public
+                and session.scalar(select(func.count()).select_from(Turn)) >= 100
+            ):
+                raise HTTPException(429, "This demo allows 100 questions per session.")
             document = document_or_404(session, body.document_id)
             passages = session.scalars(
                 select(Passage).where(Passage.document_id == document.id)
@@ -245,7 +316,16 @@ def create_app(database_url=None):
             )
             session.add(run)
             session.commit()
-            tasks.add_task(run_evaluation, database, run.id)
+            if (
+                database.public
+                and session.scalar(select(func.count()).select_from(Run)) > 3
+            ):
+                session.delete(run)
+                session.commit()
+                raise HTTPException(
+                    429, "This demo allows three evaluation runs per session."
+                )
+            tasks.add_task(run_evaluation, database.current(), run.id)
             return {"id": run.id, "status": run.status}
 
     @app.post("/api/voice/transcribe")
@@ -256,11 +336,18 @@ def create_app(database_url=None):
         try:
             from .voice import transcribe
 
-            return {"text": transcribe(content)}
+            text = await run_in_threadpool(transcribe, content)
+            if not text.strip():
+                raise HTTPException(
+                    422, "No speech was detected. Try a clearer recording."
+                )
+            return {"text": text}
+        except HTTPException:
+            raise
         except ImportError:
             raise HTTPException(
                 503,
-                "Local speech isn't installed. Install the voice extras to enable transcription.",
+                "Speech isn't installed. Install the voice extras to enable transcription.",
             )
         except Exception:
             raise HTTPException(
@@ -272,24 +359,28 @@ def create_app(database_url=None):
     def speech(turn_id: str):
         with database.session() as session:
             turn = session.get(Turn, turn_id)
-            if not turn or turn.result["disposition"] != "answer":
-                raise HTTPException(422, "Only an answered turn can be read aloud.")
+            if not turn:
+                raise HTTPException(404, "Turn not found.")
             try:
                 from .voice import speak
 
                 return Response(
-                    speak(turn.result["answer"][:2000]), media_type="audio/wav"
+                    speak((turn.result["answer"] or turn.result["reason"])[:2000]),
+                    media_type="audio/wav",
                 )
             except ImportError:
                 raise HTTPException(
                     503,
-                    "Local speech isn't installed. Install the voice extras to enable audio.",
+                    "Speech isn't installed. Install the voice extras to enable audio.",
                 )
             except Exception:
                 raise HTTPException(
-                    503, "Speech generation failed. Check the local Kokoro model."
+                    503, "Speech generation failed. Check the configured Piper model."
                 )
 
+    static = Path(os.getenv("EVIDRA_STATIC_DIR", "frontend/dist"))
+    if static.is_dir():
+        app.mount("/", StaticFiles(directory=static, html=True), name="frontend")
     return app
 
 
