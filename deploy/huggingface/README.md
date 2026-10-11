@@ -21,11 +21,11 @@ preload_from_hub:
 
 **Turn your documents into a voice assistant.**
 
-Choose **Try the sample**, click **Start talking**, and ask: “How many days of paid leave do I get?” Hear the reply and inspect the source beside it. You can upload a searchable PDF, text file, or Markdown document up to 5 MB.
+Choose **Try the sample**, click **Start talking**, and ask: “How many days of paid leave do I get?” Hear the reply and inspect the source beside it. Upload a PDF, PNG/JPG/WebP image, text file or Markdown document up to 5 MB.
 
 Choose **हिन्दी · Hindi** to ask and hear replies in Hindi. The demo uses English documents; Hindi questions are translated for document search. Hindi is an early demo and needs human verification. Voice is turn-taking, with interruptible playback.
 
-After uploading, ask **“What is this document about?”** for an overview, or ask about a specific fact. **Check the imported text** confirms that the PDF was read. Scanned PDFs need OCR first.
+After uploading, ask **“What is this document about?”** for an overview, or ask about a specific fact. **Check the imported text** shows extraction and OCR use. Tesseract reads scanned pages with English/Hindi language packs. Unreliable pages are rejected; OCR warnings ask you to verify important facts. Handwriting, blurred scans and table structure are not guaranteed. The demo supports at most 100 PDF pages, 20 OCR pages per upload and 12 megapixels per image.
 
 ## Built with open models
 

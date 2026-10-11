@@ -94,6 +94,32 @@ def test_grounding_accepts_numbers_written_as_words():
     )
 
 
+def test_model_selects_sources_and_server_copies_exact_text():
+    from evidra.models import source_snippets, resolve_sources
+
+    evidence = [
+        {
+            "id": "a",
+            "text": "Doctoral work at MIT focused on auditory physics. Returns are accepted within 37 days.",
+        }
+    ]
+    snippets = source_snippets(evidence)
+    result = resolve_sources(
+        {
+            "answer": "He completed his doctoral work at MIT.",
+            "sources": [snippets[0]["id"]],
+        },
+        snippets,
+    )
+    assert result["citations"] == ["a"]
+    assert result["quotes"][0]["text"] in evidence[0]["text"]
+    assert validate_grounding(result, evidence) == result
+    with pytest.raises(ValueError, match="source selection"):
+        resolve_sources({"answer": "Invented", "sources": ["99.1"]}, snippets)
+    empty = resolve_sources({"answer": "", "sources": []}, snippets)
+    assert validate_grounding(empty, evidence)["citations"] == []
+
+
 def test_index_is_reused_and_upload_rolls_back_if_indexing_fails(monkeypatch, tmp_path):
     from sqlalchemy import select, func
     from evidra.db import Database, Passage, PassageEmbedding, Document

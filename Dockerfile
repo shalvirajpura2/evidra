@@ -6,7 +6,7 @@ COPY frontend/ ./
 RUN npm run build
 
 FROM python:3.12-slim
-RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 libsndfile1 espeak-ng && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 libsndfile1 espeak-ng tesseract-ocr tesseract-ocr-eng tesseract-ocr-hin && rm -rf /var/lib/apt/lists/*
 RUN useradd -m -u 1000 app
 WORKDIR /app
 COPY requirements.lock.txt pyproject.toml ./

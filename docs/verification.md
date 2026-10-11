@@ -52,3 +52,13 @@ The reported question “what is this PDF about” failed because the old keywor
 - Ten independent visitors uploaded unfamiliar synthetic guides and retrieved their distinct return windows using real ONNX retrieval. All ten matched the expected source facts; all ten cross-visitor document reads returned 404. The combined local probe took 4.43 seconds, excluding model-generation and voice work.
 - 24 backend tests passed, including overview routing, long-document coverage disclosure, exact-quote rejection, numeric validation, persisted-index reuse, rollback on failed indexing, and existing isolation/voice boundaries. The frontend TypeScript/Vite build passed.
 - The first hosted build exposed Tokenizers 0.23.1's Hub dependency conflict. The corrected pin is Tokenizers 0.23.3, whose declared dependency supports the installed Hub version. Hosted generation checks are recorded separately after deployment.
+
+## OCR import checks — October 11, 2026
+
+Tesseract 5 with English/Hindi language packs is installed in the public Space. PDFium renders unreadable/image-bearing PDF pages; text PDFs retain their readable layer. Imports preserve page references, report OCR use and blank pages, and reject unreliable OCR before indexing. The bounded demo allows 20 OCR pages per upload; it does not promise perfect handwriting, tables or image interpretation.
+
+- 29 backend tests passed, covering OCR routing, page references, low-confidence rejection, blank pages, processing limits, database rollback and OCR-text answers through the normal document pipeline. Tesseract calls are mocked in these unit tests; actual hosted checks below are separate.
+- Real hosted uploads of a synthetic PNG and its image-only PDF returned HTTP 201. Both preserved the 37-day return window and original-receipt instruction. Tesseract's character-weighted confidence was 96.4 and 96.1 respectively; those scores are not measured transcription accuracy.
+- The original three-page text PDF still extracts into seven passages without using OCR. Adding OCR does not by itself resolve generated-answer failures.
+- TypeScript/Vite builds and formatting passed. GitHub Actions run 38111601398 passed for commit f3a9b9a.
+- An anonymous model request hit the ZeroGPU runs limit. No token or alternate identity was used to bypass it. The signed-in canonical browser successfully generated a readable overview of a separately uploaded four-page English profile PDF, citing three passages in 5.2 seconds of processing. This is one real unfamiliar-document check, not an all-document accuracy benchmark.
