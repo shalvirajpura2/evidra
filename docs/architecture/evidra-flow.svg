@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="850" viewBox="0 0 1600 850">
+<rect width="1600" height="850" fill="#151617"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1L9 5L1 9" fill="none" stroke="context-stroke" stroke-width="1.3"/></marker></defs>
+<text x="40" y="45" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="30" text-anchor="start">
+<tspan x="40" dy="0">evidra / your document, now with a voice</tspan>
+</text>
+<text x="40" y="78" fill="#80b8cc" font-family="Comic Sans MS, Comic Sans, cursive" font-size="16" text-anchor="start">
+<tspan x="40" dy="0">one product flow — read the document first, then answer from its contents</tspan>
+</text>
+<path d="M35 128L1565 125L1563 360L37 358Z" fill="none" stroke="#ddd9ce" stroke-width="1.2" stroke-dasharray="7 7"/>
+<text x="47" y="150" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="17" text-anchor="start">
+<tspan x="47" dy="0">1 / prepare your document once</tspan>
+</text>
+<path d="M82 201Q69 200 71 214L70 288Q70 301 83 300L318 299Q331 300 330 287L329 213Q330 200 317 200Z" fill="#151617" stroke="#ddd9ce" stroke-width="1.4"/>
+<text x="200.0" y="241.95000000000002" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="23" text-anchor="middle">
+<tspan x="200.0" dy="0">Upload a document</tspan>
+<tspan x="200.0" dy="32.199999999999996">PDF / image / TXT / MD</tspan>
+</text>
+<path d="M482 201Q469 200 471 214L470 288Q470 301 483 300L748 299Q761 300 760 287L759 213Q760 200 747 200Z" fill="#151617" stroke="#ddd9ce" stroke-width="1.4"/>
+<text x="615.0" y="241.95000000000002" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="23" text-anchor="middle">
+<tspan x="615.0" dy="0">Read its text</tspan>
+<tspan x="615.0" dy="32.199999999999996">pypdf or Tesseract OCR</tspan>
+</text>
+<path d="M912 201Q899 200 901 214L900 288Q900 301 913 300L1173 299Q1186 300 1185 287L1184 213Q1185 200 1172 200Z" fill="#151617" stroke="#ddd9ce" stroke-width="1.4"/>
+<text x="1042.5" y="241.95000000000002" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="23" text-anchor="middle">
+<tspan x="1042.5" dy="0">Make it searchable</tspan>
+<tspan x="1042.5" dy="32.199999999999996">Passages + E5 embeddings</tspan>
+</text>
+<path d="M1320 199C1320 180 1520 180 1520 199L1520 306C1520 325 1320 325 1320 306Z M1320 199C1320 218 1520 218 1520 199" fill="none" stroke="#ddd9ce" stroke-width="1.3"/>
+<text x="1420.0" y="234" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="16" text-anchor="middle">
+<tspan x="1420.0" dy="0">Your workspace</tspan>
+<tspan x="1420.0" dy="22.4">SQLite</tspan>
+<tspan x="1420.0" dy="22.4">Text + search vectors</tspan>
+</text>
+<path d="M330,250L470,250" fill="none" stroke="#ddd9ce" stroke-width="1.3" marker-end="url(#arrow)"/>
+<path d="M760,250L900,250" fill="none" stroke="#ddd9ce" stroke-width="1.3" marker-end="url(#arrow)"/>
+<path d="M1185,250L1320,250" fill="none" stroke="#ddd9ce" stroke-width="1.3" marker-end="url(#arrow)"/>
+<path d="M35 443L1565 440L1563 650L37 648Z" fill="none" stroke="#ddd9ce" stroke-width="1.2" stroke-dasharray="7 7"/>
+<text x="47" y="465" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="17" text-anchor="start">
+<tspan x="47" dy="0">2 / ask a question — repeat for every voice turn</tspan>
+</text>
+<path d="M77 511Q64 510 66 524L65 598Q65 611 78 610L263 609Q276 610 275 597L274 523Q275 510 262 510Z" fill="#151617" stroke="#ddd9ce" stroke-width="1.4"/>
+<text x="170.0" y="553.35" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="19" text-anchor="middle">
+<tspan x="170.0" dy="0">Speak or type</tspan>
+<tspan x="170.0" dy="26.599999999999998">English / Hindi</tspan>
+</text>
+<path d="M327 511Q314 510 316 524L315 598Q315 611 328 610L513 609Q526 610 525 597L524 523Q525 510 512 510Z" fill="#151617" stroke="#ddd9ce" stroke-width="1.4"/>
+<text x="420.0" y="553.35" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="19" text-anchor="middle">
+<tspan x="420.0" dy="0">Turn voice into text</tspan>
+<tspan x="420.0" dy="26.599999999999998">Whisper / CPU</tspan>
+</text>
+<path d="M577 511Q564 510 566 524L565 598Q565 611 578 610L763 609Q776 610 775 597L774 523Q775 510 762 510Z" fill="#151617" stroke="#ddd9ce" stroke-width="1.4"/>
+<text x="670.0" y="553.35" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="19" text-anchor="middle">
+<tspan x="670.0" dy="0">Find source passages</tspan>
+<tspan x="670.0" dy="26.599999999999998">E5 + BM25 + MiniLM</tspan>
+</text>
+<path d="M827 511Q814 510 816 524L815 598Q815 611 828 610L1013 609Q1026 610 1025 597L1024 523Q1025 510 1012 510Z" fill="#151617" stroke="#d9b16a" stroke-width="1.4"/>
+<text x="920.0" y="553.35" fill="#d9b16a" font-family="Comic Sans MS, Comic Sans, cursive" font-size="19" text-anchor="middle">
+<tspan x="920.0" dy="0">Write + check answer</tspan>
+<tspan x="920.0" dy="26.599999999999998">Qwen3-4B / GPU</tspan>
+</text>
+<path d="M1077 511Q1064 510 1066 524L1065 598Q1065 611 1078 610L1263 609Q1276 610 1275 597L1274 523Q1275 510 1262 510Z" fill="#151617" stroke="#ddd9ce" stroke-width="1.4"/>
+<text x="1170.0" y="553.35" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="19" text-anchor="middle">
+<tspan x="1170.0" dy="0">Turn answer into voice</tspan>
+<tspan x="1170.0" dy="26.599999999999998">Piper / CPU</tspan>
+</text>
+<path d="M1327 511Q1314 510 1316 524L1315 598Q1315 611 1328 610L1513 609Q1526 610 1525 597L1524 523Q1525 510 1512 510Z" fill="#151617" stroke="#80b8cc" stroke-width="1.4"/>
+<text x="1420.0" y="553.35" fill="#80b8cc" font-family="Comic Sans MS, Comic Sans, cursive" font-size="19" text-anchor="middle">
+<tspan x="1420.0" dy="0">Listen + verify</tspan>
+<tspan x="1420.0" dy="26.599999999999998">Original source shown</tspan>
+</text>
+<path d="M275,560L315,560" fill="none" stroke="#ddd9ce" stroke-width="1.3" marker-end="url(#arrow)"/>
+<path d="M525,560L565,560" fill="none" stroke="#ddd9ce" stroke-width="1.3" marker-end="url(#arrow)"/>
+<path d="M775,560L815,560" fill="none" stroke="#ddd9ce" stroke-width="1.3" marker-end="url(#arrow)"/>
+<path d="M1025,560L1065,560" fill="none" stroke="#ddd9ce" stroke-width="1.3" marker-end="url(#arrow)"/>
+<path d="M1275,560L1315,560" fill="none" stroke="#ddd9ce" stroke-width="1.3" marker-end="url(#arrow)"/>
+<path d="M1370,320L1370,390L670,390L670,510" fill="none" stroke="#80b8cc" stroke-width="1.3" marker-end="url(#arrow)" stroke-dasharray="6 6"/>
+<text x="720" y="381" fill="#80b8cc" font-family="Comic Sans MS, Comic Sans, cursive" font-size="14" text-anchor="start">
+<tspan x="720" dy="0">retrieve evidence from your document</tspan>
+</text>
+<path d="M920,510L920,415L1470,415L1470,320" fill="none" stroke="#80b8cc" stroke-width="1.3" marker-end="url(#arrow)" stroke-dasharray="6 6"/>
+<text x="1010" y="408" fill="#80b8cc" font-family="Comic Sans MS, Comic Sans, cursive" font-size="14" text-anchor="start">
+<tspan x="1010" dy="0">save answer + source references</tspan>
+</text>
+<text x="65" y="690" fill="#80b8cc" font-family="Comic Sans MS, Comic Sans, cursive" font-size="19" text-anchor="start">
+<tspan x="65" dy="0">Hindi: translate question to English for search, then translate the checked answer back to Hindi (NLLB).</tspan>
+</text>
+<text x="65" y="730" fill="#ddd9ce" font-family="Comic Sans MS, Comic Sans, cursive" font-size="18" text-anchor="start">
+<tspan x="65" dy="0">If evidence is insufficient or checks fail, we withhold the draft and explain why. OCR and answers can still be imperfect.</tspan>
+</text>
+<text x="65" y="770" fill="#d9b16a" font-family="Comic Sans MS, Comic Sans, cursive" font-size="18" text-anchor="start">
+<tspan x="65" dy="0">Today: turn-taking, no streaming, shared HF GPU queue. Each visitor has a separate temporary workspace.</tspan>
+</text>
+<text x="40" y="810" fill="#80b8cc" font-family="Comic Sans MS, Comic Sans, cursive" font-size="15" text-anchor="start">
+<tspan x="40" dy="0">Code baseline: main / 0d1888f  |  rshalvi/evidra  |  deployed design, not a future architecture</tspan>
+</text>
+</svg>
