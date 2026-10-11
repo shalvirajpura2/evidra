@@ -315,10 +315,28 @@ export default function Guided() {
           {!selected && (
             <div className="intro-note">
               <Scribble />
-              <span>No setup. Just a little curiosity.</span>
+              <span>Bring a document. Bring a little curiosity.</span>
             </div>
           )}
         </section>
+        {health.public && (
+          <aside className="account-notice" aria-label="Hugging Face account notice">
+            <ShieldCheck size={20} aria-hidden="true" />
+            <div>
+              <strong>Before you start: create a free Hugging Face account.</strong>
+              <p>
+                Sign in on this Hugging Face page to use the AI assistant with your account’s quota.
+                Guest access is limited, and free accounts also have daily limits. Thank you!
+              </p>
+              <a href="https://huggingface.co/join" target="_blank" rel="noreferrer">
+                Create an account <ArrowUpRight size={14} aria-hidden="true" />
+              </a>
+              <a href="https://huggingface.co/login" target="_blank" rel="noreferrer">
+                Already have one? Sign in <ArrowUpRight size={14} aria-hidden="true" />
+              </a>
+            </div>
+          </aside>
+        )}
         <ol className="steps" aria-label="Your next steps">
           {['Choose a document', 'Talk to your assistant', 'Check the source'].map((label, i) => (
             <li
@@ -483,20 +501,26 @@ export default function Guided() {
               <div className="voice-panel">
                 <div className="voice-panel-top">
                   <span className="small-label">02 / LET’S TALK</span>
-                  <label className="language-picker">
-                    <span className="visually-hidden">Conversation language</span>
-                    <select
-                      value={language}
-                      disabled={busy || voiceActive}
-                      onChange={(e) => {
-                        clearPlayback();
-                        setLanguage(e.target.value as 'en' | 'hi');
-                      }}
-                    >
-                      <option value="en">English</option>
-                      <option value="hi">हिन्दी · Hindi</option>
-                    </select>
-                  </label>
+                  <div className="language-guide">
+                    <span className="language-hint" id="language-hint">
+                      Check languages here <ArrowRight size={17} aria-hidden="true" />
+                    </span>
+                    <label className="language-picker">
+                      <span className="visually-hidden">Conversation language</span>
+                      <select
+                        value={language}
+                        aria-describedby="language-hint"
+                        disabled={busy || voiceActive}
+                        onChange={(e) => {
+                          clearPlayback();
+                          setLanguage(e.target.value as 'en' | 'hi');
+                        }}
+                      >
+                        <option value="en">English</option>
+                        <option value="hi">हिन्दी · Hindi</option>
+                      </select>
+                    </label>
+                  </div>
                 </div>
                 <div className={`voice-orb ${phase} ${busy ? 'thinking' : ''}`} aria-hidden="true">
                   <div className="orb-ring ring-one" />
