@@ -35,7 +35,9 @@ Install `.[voice]` in a compatible Python environment. The adapters now use Whis
 
 Base local mode uses lexical retrieval without downloading models. To use the same CPU retrieval as hosting, install `pip install -e ".[embeddings]"`, set `EVIDRA_RETRIEVAL=hybrid`, and restart the API. E5 and cross-encoder ONNX weights download on first use into ignored `data/models/retrieval`. Upload builds a persisted embedding index; later questions reuse it. Transformers mode requires the separate chat dependencies and compatible PyTorch environment. The hosted answer model is Qwen3-4B-Instruct-2507; base local mode still returns excerpts.
 
-PDF extraction retains page locators. Passages overlap to preserve boundary facts. Short-document overviews include all extracted passages up to an 8,800-character evidence budget; longer files use evenly spaced passages and report sampling. This is not OCR or exhaustive long-document summarization. Search scores are routing heuristics, not calibrated confidence probabilities.
+PDF extraction retains page locators. Passages overlap to preserve boundary facts. Short-document overviews include all extracted passages up to an 8,800-character evidence budget; longer files use evenly spaced passages and report sampling. This is not exhaustive long-document summarization. Search scores are routing heuristics, not calibrated confidence probabilities.
+
+For scanned PDF/image uploads, install the `documents` extra and Tesseract 5 with `eng` and `hin` language packs. Linux: `apt-get install tesseract-ocr tesseract-ocr-eng tesseract-ocr-hin`. On Windows, set `EVIDRA_TESSERACT` to an installed Tesseract executable if it is outside PATH. PDFium renders pages at up to 300 DPI with a 12-megapixel cap. One rendering/OCR job runs at a time; subprocesses time out after 30 seconds. Imports reject unreliable pages rather than silently omitting them, and store an extraction report alongside passages. OCR is installed in the hosted Space; this workstation does not currently have the Tesseract executable.
 
 ## Verification
 

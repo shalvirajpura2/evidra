@@ -1084,7 +1084,7 @@ export default function Workbench() {
       <input
         hidden
         type="file"
-        accept=".txt,.md,.pdf"
+        accept=".txt,.md,.pdf,.png,.jpg,.jpeg,.webp"
         ref={importFile}
         onChange={(e) => upload(e.target.files?.[0])}
       />

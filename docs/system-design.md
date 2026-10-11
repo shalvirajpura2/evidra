@@ -26,6 +26,7 @@ flowchart LR
 - `api.py`: request validation, file limits, HTTP error mapping. No generation policy in route handlers.
 - `db.py`: SQLAlchemy models and session lifecycle. SQLite for setup; PostgreSQL through `EVIDRA_DATABASE_URL`.
 - `documents.py`: extraction, hashing, versioning and source locations.
+- `ocr.py`: bounded PDFium rendering and Tesseract English/Hindi OCR. Low-confidence pages fail before indexing; extraction reports preserve OCR use and warnings. Text, OCR passages and voice questions use the same document-scoped pipeline.
 - `pipeline.py`: intent routing, evidence selection, provider interaction and decision trace.
 - `evaluations.py`: versioned cases and baseline comparison.
 - `voice.py`: optional speech libraries, loaded only when requested.

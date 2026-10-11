@@ -14,7 +14,7 @@ from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
-from .db import Database, Document, Passage, Review, Run, Turn
+from .db import Database, Document, Passage, Review, Run, Turn, ExtractionReport
 from .documents import HANDBOOK_TEXT, ingest, seed
 from .evaluations import CASES, run_evaluation
 from .pipeline import execute, settings
@@ -119,6 +119,7 @@ def create_app(database_url=None):
         return document
 
     def document_dict(session, document):
+        extraction = session.get(ExtractionReport, document.id)
         count = session.scalar(
             select(func.count())
             .select_from(Passage)
@@ -130,6 +131,7 @@ def create_app(database_url=None):
             "version": document.version,
             "digest": document.digest,
             "source": document.source,
+            "extraction": extraction.report if extraction else None,
             "passage_count": count,
             "text_preview": (
                 session.scalar(
@@ -232,7 +234,8 @@ def create_app(database_url=None):
             raise
         except RuntimeError:
             raise HTTPException(
-                503, "Document indexing is temporarily unavailable. Please try again."
+                503,
+                "Document OCR or indexing is temporarily unavailable. Please try again or upload a text export.",
             )
         except (ValueError, UnicodeError) as error:
             raise HTTPException(

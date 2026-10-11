@@ -21,6 +21,8 @@ pydantic==2.14.0
 pydantic_core==2.50.0
 Pygments==2.21.0
 pypdf==6.20.0
+pypdfium2==5.14.0
+Pillow==12.3.0
 pytest==9.1.1
 python-multipart==0.0.32
 pytokens==0.4.1

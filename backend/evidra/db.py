@@ -37,6 +37,14 @@ class Passage(Base):
     text: Mapped[str] = mapped_column(Text)
 
 
+class ExtractionReport(Base):
+    __tablename__ = "extraction_reports"
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("documents.id"), primary_key=True
+    )
+    report: Mapped[dict] = mapped_column(JSON)
+
+
 class PassageEmbedding(Base):
     __tablename__ = "passage_embeddings"
     passage_id: Mapped[str] = mapped_column(ForeignKey("passages.id"), primary_key=True)

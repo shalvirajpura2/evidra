@@ -8,6 +8,9 @@ Evidra's application code is independent. The doodles are original SVG paths. Re
 | React, Vite | Interface and build tooling | MIT |
 | SQLAlchemy | Database access | MIT |
 | pypdf | Searchable PDF extraction | BSD-3-Clause |
+| Tesseract + tessdata language packs | English/Hindi scanned text recognition | Apache-2.0 |
+| pypdfium2 / PDFium | PDF page rendering | Apache-2.0 or BSD-3-Clause / BSD-style notices |
+| Pillow | Image decoding and preprocessing | HPND |
 | httpx | Local model HTTP client | BSD-3-Clause |
 | Lucide | Interface icons | ISC |
 | DM Sans, Kalam | Interface fonts | SIL Open Font License |

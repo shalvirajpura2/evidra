@@ -26,6 +26,12 @@ type Document = {
   version: number;
   passage_count: number;
   text_preview?: string;
+  extraction?: {
+    pages: number;
+    characters: number;
+    ocr_pages: { page: number; confidence: number }[];
+    warnings: string[];
+  };
 };
 type Turn = {
   id: string;
@@ -345,7 +351,7 @@ export default function Guided() {
         <input
           ref={uploadRef}
           type="file"
-          accept=".pdf,.txt,.md"
+          accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp"
           className="visually-hidden"
           aria-label="Upload a document"
           onChange={(e) => void upload(e.target.files?.[0])}
@@ -394,9 +400,10 @@ export default function Guided() {
                 <br />
                 Make something you already have easier to ask.
               </p>
-              <span className="file-types">PDF · TXT · Markdown · up to 5 MB</span>
+              <span className="file-types">PDF · Images · TXT · Markdown · up to 5 MB</span>
               <span className="card-action">
-                Choose a document <ArrowRight size={18} />
+                {uploading ? 'Reading, scanning and indexing…' : 'Choose a document'}{' '}
+                <ArrowRight size={18} />
               </span>
               <small>Use sample or non-sensitive files. Demo storage is temporary.</small>
             </button>
@@ -438,12 +445,26 @@ export default function Guided() {
             {selected.text_preview && (
               <details className="import-preview">
                 <summary>Check the imported text</summary>
+                {selected.extraction && (
+                  <small>
+                    {selected.extraction.pages} pages ·{' '}
+                    {selected.extraction.characters.toLocaleString()} characters ·{' '}
+                    {selected.extraction.ocr_pages.length
+                      ? `OCR used on ${selected.extraction.ocr_pages.length} pages`
+                      : 'PDF text / text file'}
+                  </small>
+                )}
                 <p>{selected.text_preview}</p>
                 <small>
                   This is the beginning of the text we extracted. Answers search the whole document.
                 </small>
               </details>
             )}
+            {selected.extraction?.warnings.map((warning) => (
+              <p className="extraction-warning" key={warning}>
+                {warning}
+              </p>
+            ))}
             {showDocuments && (
               <div className="document-picker">
                 {documents.map((d) => (

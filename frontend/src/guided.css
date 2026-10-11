@@ -1333,3 +1333,10 @@
 .import-preview small {
   color: var(--muted);
 }
+.extraction-warning {
+  font-size: 13px;
+  color: #775318;
+  padding: 10px 14px;
+  background: #fff4d9;
+  border-radius: 10px;
+}

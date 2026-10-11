@@ -1,3 +1,6 @@
 libgomp1
 libsndfile1
 espeak-ng
+tesseract-ocr
+tesseract-ocr-eng
+tesseract-ocr-hin

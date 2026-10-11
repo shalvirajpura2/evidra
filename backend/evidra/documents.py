@@ -1,10 +1,11 @@
 import hashlib
 import io
 import re
+from time import monotonic
 
 from sqlalchemy import func, select
 
-from .db import Document, Passage
+from .db import Document, Passage, ExtractionReport
 
 DEMO_TEXT = """# Aster reference
 This is a fictional research reference created for software testing. It does not describe an actual medicine, patient, or clinical study.
@@ -74,6 +75,11 @@ def split_text(text, limit=1100, overlap=180):
 
 
 def extract(filename, content):
+    return extract_with_report(filename, content)[0]
+
+
+def extract_with_report(filename, content):
+    report = {"ocr_pages": [], "blank_pages": [], "warnings": [], "pages": 1}
     if filename.lower().endswith(".pdf"):
         from pypdf import PdfReader
 
@@ -84,10 +90,45 @@ def extract(filename, content):
             )
         if len(reader.pages) > 100:
             raise ValueError("Please use a PDF with 100 pages or fewer.")
-        sections = [
-            (f"Page {index + 1}", page.extract_text(extraction_mode="layout") or "")
-            for index, page in enumerate(reader.pages)
-        ]
+        from .ocr import pdf_page
+
+        report["pages"] = len(reader.pages)
+        sections = []
+        started = monotonic()
+        for index, page in enumerate(reader.pages):
+            number = index + 1
+            try:
+                text = page.extract_text(extraction_mode="layout") or ""
+            except (KeyError, ValueError):
+                text = ""
+            # Image-bearing pages may have a readable heading above a scanned body.
+            needs_ocr = len(text.strip()) < 40 or "\ufffd" in text or bool(page.images)
+            if needs_ocr:
+                if len(report["ocr_pages"]) >= 20 or monotonic() - started > 180:
+                    raise ValueError(
+                        "This scan exceeds the demo OCR budget. Split it into files of up to 20 scanned pages."
+                    )
+                try:
+                    ocr_text, confidence = pdf_page(content, index)
+                except ValueError as error:
+                    raise ValueError(f"Page {number}: {error}") from error
+                if ocr_text:
+                    report["ocr_pages"].append(
+                        {"page": number, "confidence": confidence}
+                    )
+                    if (
+                        len(ocr_text) > len(text)
+                        or len(text.strip()) < 40
+                        or "\ufffd" in text
+                    ):
+                        text = ocr_text
+                    if confidence is not None and confidence < 85:
+                        report["warnings"].append(
+                            f"Page {number}: OCR is uncertain. Check names, numbers and tables against the original."
+                        )
+                elif not text.strip():
+                    report["blank_pages"].append(number)
+            sections.append((f"Page {number}", text))
     elif filename.lower().endswith((".txt", ".md")):
         text = content.decode("utf-8-sig")
         sections = []
@@ -97,8 +138,14 @@ def extract(filename, content):
                 heading = block.lstrip("# ").strip()[:150]
             elif block.strip():
                 sections.append((heading, block.strip()))
+    elif filename.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+        from .ocr import image_text
+
+        text, confidence = image_text(content)
+        report["ocr_pages"].append({"page": 1, "confidence": confidence})
+        sections = [("Page 1", text)]
     else:
-        raise ValueError("Choose a UTF-8 text file, Markdown file, or searchable PDF.")
+        raise ValueError("Choose a PDF, PNG, JPG, WebP, UTF-8 text or Markdown file.")
     passages = []
     for locator, text in sections:
         for index, chunk in enumerate(split_text(text)):
@@ -106,20 +153,29 @@ def extract(filename, content):
                 passages.append((f"{locator} · {index + 1}", chunk))
     if not passages:
         raise ValueError(
-            "No readable text found. Scanned PDFs need OCR before importing."
+            "No readable text found. Upload a clearer scan or a text export."
         )
     if (
         filename.lower().endswith(".pdf")
         and sum(len(text) for _, text in passages) < 40
     ):
         raise ValueError(
-            "Too little readable text was extracted. Export a text PDF or run OCR first."
+            "Too little readable text was extracted. Upload a clearer scan or a text export."
         )
     if len(passages) > 600:
         raise ValueError(
             "This document is too long to index here. Split it into smaller documents (up to 600 passages each)."
         )
-    return passages
+    if report["ocr_pages"]:
+        report["warnings"].append(
+            "OCR can misread text. Verify important facts in the original; handwriting and table structure are not guaranteed."
+        )
+    if report["blank_pages"]:
+        report["warnings"].append(
+            f"Blank pages skipped: {', '.join(map(str, report['blank_pages']))}."
+        )
+    report["characters"] = sum(len(text) for _, text in sections)
+    return passages, report
 
 
 def ingest(session, filename, content, title, source="Local upload"):
@@ -129,7 +185,7 @@ def ingest(session, filename, content, title, source="Local upload"):
     )
     if existing:
         return existing
-    sections = extract(filename, content)
+    sections, report = extract_with_report(filename, content)
     version = (
         session.scalar(
             select(func.max(Document.version)).where(Document.title == title)
@@ -139,6 +195,7 @@ def ingest(session, filename, content, title, source="Local upload"):
     document = Document(title=title, version=version, digest=digest, source=source)
     session.add(document)
     session.flush()
+    session.add(ExtractionReport(document_id=document.id, report=report))
     session.add_all(
         [
             Passage(document_id=document.id, locator=locator, text=text)
