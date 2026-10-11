@@ -51,6 +51,7 @@ def create_app(database_url=None):
             from .models import model_pair
             from .voice import transcription_model, speech_model
             from .languages import translation_pair
+            from .retrieval import enabled, encoder
 
             Path("data/models").mkdir(parents=True, exist_ok=True)
             for voice in ("en_US-ljspeech-medium", "hi_IN-pratham-medium"):
@@ -69,6 +70,9 @@ def create_app(database_url=None):
                 )
             model_pair()
             translation_pair()
+            if enabled():
+                encoder()
+                encoder("reranker")
             transcription_model()
             transcription_model("hi")
             speech_model()
@@ -127,6 +131,15 @@ def create_app(database_url=None):
             "digest": document.digest,
             "source": document.source,
             "passage_count": count,
+            "text_preview": (
+                session.scalar(
+                    select(Passage.text)
+                    .where(Passage.document_id == document.id)
+                    .order_by(Passage.locator)
+                    .limit(1)
+                )
+                or ""
+            )[:900],
             "created_at": document.created_at,
         }
 
@@ -139,6 +152,7 @@ def create_app(database_url=None):
             "model_error": model_state["error"],
             "zero_gpu": os.getenv("EVIDRA_ZERO_GPU", "0") == "1",
             "languages": ["en", "hi"],
+            "retrieval": os.getenv("EVIDRA_RETRIEVAL", "lexical"),
             **settings(),
         }
 
@@ -184,7 +198,8 @@ def create_app(database_url=None):
         if len(content) > 5 * 1024 * 1024:
             raise HTTPException(413, "Please choose a file smaller than 5 MB.")
         title = (title.strip() or file.filename or "Untitled reference")[:200]
-        try:
+
+        def import_document():
             with database.session() as session:
                 if (
                     database.public
@@ -210,12 +225,20 @@ def create_app(database_url=None):
                     session, file.filename or "upload.txt", content, title
                 )
                 return document_dict(session, document)
+
+        try:
+            return await run_in_threadpool(import_document)
         except HTTPException:
             raise
-        except (ValueError, UnicodeError):
+        except RuntimeError:
+            raise HTTPException(
+                503, "Document indexing is temporarily unavailable. Please try again."
+            )
+        except (ValueError, UnicodeError) as error:
             raise HTTPException(
                 422,
-                "Couldn't read this file. Use UTF-8 text, Markdown, or a searchable PDF with up to 100 pages.",
+                str(error)
+                or "Couldn't read this file. Use UTF-8 text, Markdown, or a searchable PDF with up to 100 pages.",
             )
         except Exception:
             raise HTTPException(
@@ -244,6 +267,14 @@ def create_app(database_url=None):
             passages = session.scalars(
                 select(Passage).where(Passage.document_id == document.id)
             ).all()
+            from .retrieval import enabled, index_passages
+
+            try:
+                vectors = index_passages(session, passages) if enabled() else None
+            except (ValueError, RuntimeError, OSError):
+                raise HTTPException(
+                    503, "Couldn't prepare document search. Please try again shortly."
+                )
             previous = session.scalar(
                 select(Turn)
                 .where(
@@ -278,9 +309,18 @@ def create_app(database_url=None):
                         503,
                         "Couldn't understand this Hindi question. Please try again.",
                     )
-            result = execute(
-                search_question, passages, previous_question, language=body.language
-            )
+            try:
+                result = execute(
+                    search_question,
+                    passages,
+                    previous_question,
+                    language=body.language,
+                    vectors=vectors,
+                )
+            except (ValueError, RuntimeError, OSError):
+                raise HTTPException(
+                    503, "Document search is temporarily unavailable. Please try again."
+                )
             result["language"] = body.language
             result["search_question"] = search_question
             result["elapsed_ms"] = round((perf_counter() - started) * 1000, 2)

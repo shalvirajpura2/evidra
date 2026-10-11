@@ -48,15 +48,44 @@ This handbook does not include salaries, individual employee records, or promoti
 """
 
 
+def split_text(text, limit=1100, overlap=180):
+    text = re.sub(r"(?<=\w)-\n(?=\w)", "", text)
+    text = text.replace("\x00", "")
+    text = re.sub(r"[ \t]+", " ", text).strip()
+    start = 0
+    while start < len(text):
+        end = min(start + limit, len(text))
+        if end < len(text):
+            window = text[start + limit // 2 : end]
+            boundaries = list(re.finditer(r"[.!?।]\s+|\n\n", window))
+            if boundaries:
+                end = start + limit // 2 + boundaries[-1].end()
+            else:
+                boundary = text.rfind(" ", start + limit // 2, end)
+                if boundary > start:
+                    end = boundary
+        yield text[start:end].strip()
+        if end == len(text):
+            break
+        start = max(start + 1, end - overlap)
+        boundary = text.find(" ", start, min(start + 50, end))
+        if boundary != -1:
+            start = boundary + 1
+
+
 def extract(filename, content):
     if filename.lower().endswith(".pdf"):
         from pypdf import PdfReader
 
         reader = PdfReader(io.BytesIO(content))
+        if reader.is_encrypted:
+            raise ValueError(
+                "This PDF is encrypted. Export an unlocked text PDF first."
+            )
         if len(reader.pages) > 100:
             raise ValueError("Please use a PDF with 100 pages or fewer.")
         sections = [
-            (f"Page {index + 1}", page.extract_text() or "")
+            (f"Page {index + 1}", page.extract_text(extraction_mode="layout") or "")
             for index, page in enumerate(reader.pages)
         ]
     elif filename.lower().endswith((".txt", ".md")):
@@ -72,14 +101,23 @@ def extract(filename, content):
         raise ValueError("Choose a UTF-8 text file, Markdown file, or searchable PDF.")
     passages = []
     for locator, text in sections:
-        # Conservative small chunks keep source locators useful; semantic/token-aware splitting is optional later.
-        for index in range(0, len(text), 900):
-            chunk = text[index : index + 900].strip()
+        for index, chunk in enumerate(split_text(text)):
             if chunk:
-                passages.append((f"{locator} · {index // 900 + 1}", chunk))
+                passages.append((f"{locator} · {index + 1}", chunk))
     if not passages:
         raise ValueError(
             "No readable text found. Scanned PDFs need OCR before importing."
+        )
+    if (
+        filename.lower().endswith(".pdf")
+        and sum(len(text) for _, text in passages) < 40
+    ):
+        raise ValueError(
+            "Too little readable text was extracted. Export a text PDF or run OCR first."
+        )
+    if len(passages) > 600:
+        raise ValueError(
+            "This document is too long to index here. Split it into smaller documents (up to 600 passages each)."
         )
     return passages
 
@@ -107,6 +145,16 @@ def ingest(session, filename, content, title, source="Local upload"):
             for locator, text in sections
         ]
     )
+    session.flush()
+    from .retrieval import enabled, index_passages
+
+    if enabled():
+        index_passages(
+            session,
+            session.scalars(
+                select(Passage).where(Passage.document_id == document.id)
+            ).all(),
+        )
     session.commit()
     return document
 

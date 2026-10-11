@@ -128,7 +128,14 @@ def ollama(question, evidence, guarded):
     return json.loads(response.json()["message"]["content"])
 
 
-def execute(question, passages, previous_question=None, guarded=True, language="en"):
+def execute(
+    question,
+    passages,
+    previous_question=None,
+    guarded=True,
+    language="en",
+    vectors=None,
+):
     start = perf_counter()
     config = settings()
     disposition, reason, answer = (
@@ -149,7 +156,22 @@ def execute(question, passages, previous_question=None, guarded=True, language="
             }
         )
     retrieval_start = perf_counter()
-    evidence = retrieve(context_question, passages)
+    from .retrieval import enabled, hybrid_retrieve
+    from .overview import is_overview, overview_evidence
+
+    overview = is_overview(question)
+    complete = False
+    evidence = (
+        []
+        if overview
+        else (
+            hybrid_retrieve(context_question, passages, vectors)
+            if enabled()
+            else retrieve(context_question, passages)
+        )
+    )
+    if overview:
+        evidence, complete = overview_evidence(passages)
     retrieval_ms = round((perf_counter() - retrieval_start) * 1000, 2)
     citations = []
     if guarded and SAFETY.search(question):
@@ -162,7 +184,9 @@ def execute(question, passages, previous_question=None, guarded=True, language="
             "abstain",
             "The request asks to override evidence or expose internal instructions.",
         )
-    elif guarded and len(tokens(question)) < 2 and not previous_question:
+    elif (
+        guarded and len(tokens(question)) < 2 and not previous_question and not overview
+    ):
         disposition, reason = (
             "abstain",
             "Could you add a little more detail to your question?",
@@ -176,22 +200,39 @@ def execute(question, passages, previous_question=None, guarded=True, language="
             "abstain",
             "The reference explicitly says this information is not included.",
         )
-    elif not evidence or (guarded and evidence[0]["score"] < 0.2):
+    elif not evidence or (guarded and max(e["score"] for e in evidence) < 0.2):
         disposition, reason = (
             "abstain",
             "I couldn't find enough matching evidence in this reference.",
         )
     trace.append({"stage": "Route", "detail": reason})
+    if overview:
+        trace.append(
+            {
+                "stage": "Overview",
+                "detail": (
+                    "All extracted passages included."
+                    if complete
+                    else "Overview uses sampled passages spread across the document; it is not an exhaustive summary."
+                ),
+            }
+        )
     trace.append(
         {
             "stage": "Retrieve",
-            "detail": f"Compared passages in the selected document. {len(evidence)} candidates retained.",
+            "detail": f"{'Semantic + BM25 search, followed by cross-encoder reranking' if enabled() else 'Keyword matching'} across {len(passages)} passages in the selected document. {len(evidence)} candidates retained.",
         }
     )
     if disposition == "answer":
         if config["provider"] == "extractive":
-            answer = evidence[0]["text"]
-            citations = [evidence[0]["id"]]
+            answer = (
+                "\n\n".join(item["text"] for item in evidence)
+                if overview
+                else evidence[0]["text"]
+            )
+            citations = (
+                [item["id"] for item in evidence] if overview else [evidence[0]["id"]]
+            )
             trace.append(
                 {
                     "stage": "Compose",
@@ -218,7 +259,12 @@ def execute(question, passages, previous_question=None, guarded=True, language="
                 if not all(isinstance(item, str) for item in citations):
                     raise ValueError("Invalid citation schema")
                 allowed = {item["id"] for item in evidence}
-                if guarded and (
+                if not answer.strip() and not citations:
+                    disposition, reason = (
+                        "abstain",
+                        "The model could not answer from the available evidence.",
+                    )
+                elif guarded and (
                     not citations or any(item not in allowed for item in citations)
                 ):
                     disposition, reason, answer, citations = (
@@ -272,7 +318,11 @@ def execute(question, passages, previous_question=None, guarded=True, language="
     trace.append(
         {
             "stage": "References",
-            "detail": "Checked citation membership. Semantic correctness still needs a reviewer.",
+            "detail": (
+                reason
+                if disposition == "review"
+                else "Checked citation membership. Semantic correctness still needs a reviewer."
+            ),
         }
     )
     if language == "hi" and disposition != "answer":
@@ -283,6 +333,8 @@ def execute(question, passages, previous_question=None, guarded=True, language="
         )
     return {
         "disposition": disposition,
+        "intent": "overview" if overview else "question",
+        "overview_complete": complete if overview else None,
         "reason": reason,
         "answer": answer,
         "citations": citations,

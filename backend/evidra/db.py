@@ -37,6 +37,13 @@ class Passage(Base):
     text: Mapped[str] = mapped_column(Text)
 
 
+class PassageEmbedding(Base):
+    __tablename__ = "passage_embeddings"
+    passage_id: Mapped[str] = mapped_column(ForeignKey("passages.id"), primary_key=True)
+    model: Mapped[str] = mapped_column(String(200), primary_key=True)
+    vector: Mapped[list] = mapped_column(JSON)
+
+
 class Turn(Base):
     __tablename__ = "turns"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)

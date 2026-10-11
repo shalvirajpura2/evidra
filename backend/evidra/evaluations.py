@@ -138,6 +138,10 @@ def run_evaluation(database, run_id):
             passages = session.scalars(
                 select(Passage).where(Passage.document_id == document.id)
             ).all()
+            from .retrieval import enabled, index_passages
+
+            vectors = index_passages(session, passages) if enabled() else None
+            session.commit()
             config = {
                 **settings(),
                 "dataset_version": DATASET_VERSION,
@@ -153,8 +157,10 @@ def run_evaluation(database, run_id):
             rows.append(
                 {
                     **case,
-                    "baseline": execute(case["question"], passages, guarded=False),
-                    "candidate": execute(case["question"], passages),
+                    "baseline": execute(
+                        case["question"], passages, guarded=False, vectors=vectors
+                    ),
+                    "candidate": execute(case["question"], passages, vectors=vectors),
                 }
             )
             with database.session() as session:

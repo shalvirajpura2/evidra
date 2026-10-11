@@ -13,7 +13,7 @@ dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "sqlalchemy>=2.0,<3", "
 dev = ["pytest>=8,<10", "black>=26,<27"]
 postgres = ["psycopg[binary]>=3.2,<4"]
 documents = ["docling>=2,<3"]
-embeddings = ["sentence-transformers>=3,<6", "pgvector>=0.3,<1"]
+embeddings = ["onnxruntime>=1.31,<2", "tokenizers>=0.22,<0.24", "numpy>=1.26,<3", "huggingface-hub>=0.36,<3"]
 voice = ["faster-whisper>=1,<2", "av>=16,<17", "piper-tts>=1.3,<2"]
 chat = ["transformers>=4.51,<6", "torch>=2.6,<3", "sentencepiece>=0.2,<0.3"]
 
