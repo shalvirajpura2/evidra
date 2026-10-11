@@ -1311,3 +1311,25 @@
     transition: none !important;
   }
 }
+.import-preview {
+  margin: 12px 0 24px;
+  padding: 14px 20px;
+  border: 1px solid #dedfd4;
+  border-radius: 16px;
+}
+.import-preview summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+.import-preview p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 190px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.import-preview small {
+  color: var(--muted);
+}

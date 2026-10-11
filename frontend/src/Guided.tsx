@@ -25,6 +25,7 @@ type Document = {
   source: string;
   version: number;
   passage_count: number;
+  text_preview?: string;
 };
 type Turn = {
   id: string;
@@ -375,7 +376,7 @@ export default function Guided() {
                 answers to explore.
               </p>
               <span className="card-action">
-                {uploading ? 'Preparing your document…' : 'Meet your assistant'}{' '}
+                {uploading ? 'Reading and indexing your document…' : 'Meet your assistant'}{' '}
                 {uploading ? <LoaderCircle className="spin" size={18} /> : <ArrowRight size={18} />}
               </span>
             </button>
@@ -434,6 +435,15 @@ export default function Guided() {
                 Change <ChevronDown size={15} />
               </button>
             </section>
+            {selected.text_preview && (
+              <details className="import-preview">
+                <summary>Check the imported text</summary>
+                <p>{selected.text_preview}</p>
+                <small>
+                  This is the beginning of the text we extracted. Answers search the whole document.
+                </small>
+              </details>
+            )}
             {showDocuments && (
               <div className="document-picker">
                 {documents.map((d) => (
@@ -518,10 +528,17 @@ export default function Guided() {
                     {busy ? <LoaderCircle className="spin" size={18} /> : <Send size={18} />}
                   </button>
                 </form>
-                {sample && (
+                {
                   <div className="suggestions">
                     <span>Need a starting point?</span>
-                    {examples[language].map((q) => (
+                    {(sample
+                      ? examples[language]
+                      : [
+                          language === 'hi'
+                            ? 'इस दस्तावेज़ का सारांश क्या है?'
+                            : 'What is this document about?',
+                        ]
+                    ).map((q) => (
                       <button
                         key={q}
                         disabled={busy || voiceActive || !health.models_ready}
@@ -532,7 +549,7 @@ export default function Guided() {
                       </button>
                     ))}
                   </div>
-                )}
+                }
               </div>
               <section className="answer-panel" aria-label="Answers and sources" aria-live="polite">
                 <div className="answer-panel-top">

@@ -10,7 +10,8 @@ with zipfile.ZipFile("evidra.zip") as archive:
 sys.path.insert(0, str(Path("backend").resolve()))
 os.environ.setdefault("EVIDRA_PUBLIC", "1")
 os.environ.setdefault("EVIDRA_PROVIDER", "transformers")
-os.environ.setdefault("EVIDRA_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
+os.environ.setdefault("EVIDRA_MODEL", "Qwen/Qwen3-4B-Instruct-2507")
+os.environ["EVIDRA_RETRIEVAL"] = "hybrid"
 os.environ.setdefault("EVIDRA_WARM_MODELS", "1")
 os.environ["EVIDRA_WARM_MODELS"] = "0"
 os.environ["EVIDRA_ZERO_GPU"] = "1"

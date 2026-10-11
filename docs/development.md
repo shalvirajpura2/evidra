@@ -33,7 +33,9 @@ Install `.[voice]` in a compatible Python environment. The adapters now use Whis
 
 ## Current retrieval and parsing
 
-The working base uses lexical token-overlap retrieval and pypdf for searchable PDFs. Docling, Sentence Transformers, and pgvector were investigated in the project plan; they are not active in this release. The optional dependency groups reserve that extension path but installing them does not change behavior. The current evaluation exposes the lexical/policy limitations instead of claiming semantic or medical validation.
+Base local mode uses lexical retrieval without downloading models. To use the same CPU retrieval as hosting, install `pip install -e ".[embeddings]"`, set `EVIDRA_RETRIEVAL=hybrid`, and restart the API. E5 and cross-encoder ONNX weights download on first use into ignored `data/models/retrieval`. Upload builds a persisted embedding index; later questions reuse it. Transformers mode requires the separate chat dependencies and compatible PyTorch environment. The hosted answer model is Qwen3-4B-Instruct-2507; base local mode still returns excerpts.
+
+PDF extraction retains page locators. Passages overlap to preserve boundary facts. Short-document overviews include all extracted passages up to an 8,800-character evidence budget; longer files use evenly spaced passages and report sampling. This is not OCR or exhaustive long-document summarization. Search scores are routing heuristics, not calibrated confidence probabilities.
 
 ## Verification
 

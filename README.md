@@ -28,7 +28,7 @@ This is an independent portfolio project demonstrating voice-agent engineering: 
 - Inspect the original source beside each answer. Missing evidence produces an explanation rather than an invented answer.
 - Choose automatic sending if you prefer hands-free conversation. Otherwise press **Send my question** after speaking.
 - Stop a reply and speak again. Voice is turn-taking: the microphone pauses while the assistant answers.
-- Bring a document up to 5 MB. Scanned PDFs need OCR first.
+- Bring a document up to 5 MB. Ask “What is this document about?” or ask specific questions. Check the imported-text preview to confirm extraction. Scanned PDFs need OCR first.
 - Open **Explore the engineering** for reference versions, human reviews, the evaluation suite, and system design.
 
 The interface follows three steps: **choose → talk → check**. An English company handbook is the default example; the fictional Aster research fixture remains available for engineering evaluations.
@@ -36,14 +36,16 @@ The interface follows three steps: **choose → talk → check**. An English com
 ## How it works
 
 ```text
-microphone → whisper → document search → qwen + citation checks → piper → speaker
+microphone → whisper → document search → qwen + source checks → piper → speaker
                               ↓                  ↓
                          source passages    transcript + review trail
 ```
 
+On upload, pypdf extracts page text into overlapping passages. E5 embeddings are saved in the visitor’s database. Fact questions combine semantic and BM25 search, then a cross encoder reranks the candidates. Overview questions include the full extracted text of short documents; long documents use sampled passages from across the file, with coverage shown in the trace. Qwen must return citations and exact supporting quotes; fabricated quotes or unsupported digits withhold the draft. These checks do not prove that every interpretation is correct.
+
 React provides the browser experience. FastAPI owns documents, transcripts, and reviews. A signed visitor token selects a separate SQLite database. Gradio queues model requests on Hugging Face ZeroGPU. Speech runs on CPU with bounded concurrency.
 
-The hosted models are Qwen2.5-1.5B-Instruct, faster-whisper small for English and medium for Hindi, NLLB translation, and Piper voices for English and Hindi. There is no paid inference API dependency. Component and voice licenses are documented in [open-source components](docs/open-source.md). The Hindi Pratham voice has a **noncommercial, share-alike dataset license**; this portfolio demo is not a commercially licensed voice service.
+The hosted models are Qwen3-4B-Instruct-2507, faster-whisper small for English and medium for Hindi, NLLB translation, and Piper voices for English and Hindi. There is no paid inference API dependency. Component and voice licenses are documented in [open-source components](docs/open-source.md). The Hindi Pratham voice has a **noncommercial, share-alike dataset license**; this portfolio demo is not a commercially licensed voice service.
 
 ## Capacity and honest limits
 

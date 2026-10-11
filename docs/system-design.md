@@ -2,7 +2,7 @@
 
 ## Scope
 
-One developer workspace, multiple versioned documents, persistent conversations, review decisions, and saved evaluation runs. A modular Python service owns the data and pipeline; a React client owns presentation. This is a local-first application. The initial deployment has no account system and must stay on loopback.
+One developer workspace, multiple versioned documents, persistent conversations, review decisions, and saved evaluation runs. A modular Python service owns the data and pipeline; a React client owns presentation. This is a local-first application. Local mode stays on loopback; the public demo uses signed temporary visitor sessions and isolated databases. It has no persistent account system.
 
 ```mermaid
 flowchart LR
@@ -34,7 +34,7 @@ flowchart LR
 
 Document bytes are size-limited and parsed. Every import receives a content hash and per-title version. PDF page locations are retained; text imports have section locators. Passage records belong to a specific immutable document. A question selects one document ID rather than an unversioned title.
 
-Local evidence mode ranks passages with exact-token overlap and returns excerpts. This provides an honest offline baseline, not semantic retrieval. Optional embedding retrieval is a future extension. Ollama mode uses the same selected evidence and requests structured JSON. Nonexistent citations and empty evidence are rejected. No generated answer is represented as clinically verified.
+Local evidence mode ranks passages with exact-token overlap and returns excerpts. This provides an honest offline baseline, not semantic retrieval. The hosted hybrid path stores E5 ONNX vectors alongside passage IDs in the same visitor database, combines semantic and BM25 candidates with reciprocal-rank fusion, and cross-encoder reranks up to twelve candidates into four answer passages. Overview intent instead supplies document-wide coverage, with sampled coverage disclosed for long files. Ollama mode uses the same selected evidence and requests structured JSON. Nonexistent citations and empty evidence are rejected. No generated answer is represented as clinically verified.
 
 Every conversation turn records the actual document/version, evidence IDs, provider/model, answer, disposition, reasons and elapsed times. The user sees a decision trace, not a model's private reasoning. Human review decisions attach to the original turn and do not rewrite it.
 
@@ -48,7 +48,7 @@ Model endpoints are configured by the server environment, never arbitrary browse
 
 ## Scaling path
 
-Keep this as a modular monolith until work volume justifies separation. Move SQLite to PostgreSQL; introduce an ingestion/evaluation worker and bounded job queue for large files and runs. Add token-aware semantic retrieval with pgvector only after lexical failure cases are measured. Use document-scoped cache keys including hash, model and policy version. Voice verification adds latency, so measure the full path before attempting sentence streaming.
+Keep this as a modular monolith until work volume justifies separation. Move SQLite to PostgreSQL; introduce an ingestion/evaluation worker and bounded job queue for large files and runs. Move the measured ONNX embedding/index path to a managed vector store if document volume requires it. Use document-scoped cache keys including hash, model and policy version. Voice verification adds latency, so measure the full path before attempting sentence streaming.
 
 ## Known limits
 
@@ -64,3 +64,7 @@ The Northstar sample is created idempotently per visitor through `/api/demo`. Th
 Hindi transcription uses multilingual Whisper. The question is translated into English in the GPU handler before existing retrieval and policy checks. The original transcript, translated search text, language and citations are retained. Qwen generates a cited English answer. NLLB distilled 600M translates it into Hindi, with a number-preservation check. NLLB also translates incoming questions on CPU. Translation quality is not guaranteed for malformed transcripts. Failed translation returns an error rather than a fabricated answer. Stored language selects the matching Piper voice for replay.
 
 The shared model queue has 16 waiting jobs and one inference slot. CPU voice work has two slots and a 60-second bounded wait. This is suitable for testing ten independent sessions with queues; it is not a guarantee of ten simultaneous low-latency calls on free hardware. Heavy evaluations share the same queue and can delay questions.
+
+## Document answer checks
+
+The Transformers adapter requires answer, citation IDs and exact source quotes. Quote text must occur in its cited passage; every citation needs a quote. Digits in the English answer must appear in the cited text. These checks reject malformed or numerically unsupported drafts, but do not establish entailment. Translation adds a separate number-preservation check. Retrieval scores are heuristics, not probabilities. Model failures remain visible and do not silently become successful answers.
