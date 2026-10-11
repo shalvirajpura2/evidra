@@ -1021,8 +1021,8 @@ export default function Workbench() {
                 'React workspace',
                 'FastAPI boundary',
                 'Intent + retrieval',
-                'Excerpts / Ollama',
-                'Citation checks',
+                'Qwen / local adapter',
+                'Source quote checks',
                 'Answer / review',
               ].map((label, index) => (
                 <React.Fragment key={label}>
@@ -1042,7 +1042,7 @@ export default function Workbench() {
                 },
                 {
                   title: 'Be honest about the model',
-                  text: 'The default mode quotes retrieved passages. Ollama is a separate adapter with explicit failures and no silent fallback.',
+                  text: 'Hosting uses Qwen with source quotes. Local evidence mode returns excerpts. Model failures stay visible.',
                 },
                 {
                   title: 'Make failure inspectable',
@@ -1054,11 +1054,11 @@ export default function Workbench() {
                 },
                 {
                   title: 'Start local, grow deliberately',
-                  text: 'SQLite keeps setup light. PostgreSQL is supported through configuration. Workers and semantic retrieval are documented extensions.',
+                  text: 'E5 vectors live beside source passages in each visitor database. BM25 and semantic search feed a cross encoder; overview questions use page coverage.',
                 },
                 {
                   title: 'Keep the boundary clear',
-                  text: 'This local workspace has no tenant authentication. Use fictional fixtures; public deployment requires additional access controls.',
+                  text: 'The public demo isolates visitors with signed temporary sessions. Local mode stays on loopback. Uploaded documents are untrusted data.',
                 },
               ].map((item) => (
                 <article className="architecture-card" key={item.title}>

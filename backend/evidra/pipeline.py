@@ -302,17 +302,39 @@ def execute(
                 RuntimeError,
                 ImportError,
                 OSError,
-            ):
+            ) as error:
+                import logging
+                import traceback
+
+                origin = traceback.extract_tb(error.__traceback__)[-1]
+                logging.getLogger(__name__).warning(
+                    "Draft withheld: %s in %s:%s",
+                    type(error).__name__,
+                    origin.name,
+                    origin.lineno,
+                )
                 disposition, reason, answer, citations = (
                     "review",
-                    "The model could not complete a valid response. It may be busy; try again shortly.",
+                    "I couldn't verify this answer against the document. Please try again or ask a more specific question.",
                     "",
                     [],
                 )
                 trace.append(
                     {
                         "stage": "Provider",
-                        "detail": "Provider request failed or returned malformed output. No silent fallback.",
+                        "detail": (
+                            "Supporting quote did not match the imported text."
+                            if "quote" in str(error).lower()
+                            else (
+                                "Generated numbers were not supported by the cited text."
+                                if "unsupported numbers" in str(error).lower()
+                                else (
+                                    "The selected evidence exceeded the model context budget."
+                                    if "context budget" in str(error).lower()
+                                    else "Provider request failed or returned malformed output. No silent fallback."
+                                )
+                            )
+                        ),
                     }
                 )
     trace.append(
